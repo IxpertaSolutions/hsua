@@ -1,4 +1,13 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
+-- |
+-- Module:       $HEADER$
+-- Description:  Low level FFI.
+-- Copyright:
+-- License:      GPL-2
+--
+-- Maintainer:   Jan Sipr <jan.sipr@ixperta.com>
+-- Stability:    experimental
+-- Portability:  GHC specific language extensions.
 module Phone.Internal.FFI
   where
 
@@ -35,25 +44,31 @@ pjSuccess :: CInt
 pjSuccess = #{enumToValue PJ_SUCCESS}
 
 data PjString
-data PjSuaConfig
 type PjStatus = CInt
 
 foreign import ccall "create_pj_str" createPjString
-    :: CString
-    -> IO (Ptr PjString)
+    :: CString -> IO (Ptr PjString)
 foreign import ccall "delete_pj_str" deletePjString
     :: Ptr PjString -> IO ()
 
+-- | Calls createPjSua which load the pjsua library in to memory.
+--
+-- __Must be called before any another hsua (pjsua) function is called.__
 foreign import ccall "pjsua_create" createPjSua :: IO PjStatus
+
+-- | Opposite function to 'createPjSua' function. It destroys the hsua (pjsua) library
+-- memory representaiton.
+--
+-- __No hsua (pjsua) function may be called after this function.__
 foreign import ccall "pjsua_destroy" destroyPjSua :: IO PjStatus
 
 -- {{{ pj configuration -------------------------------------------------------
 
+data PjSuaConfig
+
 foreign import ccall "create_pj_config" createPjConfig :: IO (Ptr PjSuaConfig)
 foreign import ccall "pjsua_config_default" defaultPjConfig
-    :: Ptr PjSuaConfig
-    -> IO ()
-
+    :: Ptr PjSuaConfig -> IO ()
 
 -- }}} pj configuration -------------------------------------------------------
 -- {{{ pj logging configuration -----------------------------------------------
@@ -63,8 +78,7 @@ data LoggingConfig
 foreign import ccall "create_pjsua_logging_config" createLoggingConfig
     :: IO (Ptr LoggingConfig)
 foreign import ccall "pjsua_logging_config_default" defaultLoggingConfig
-    :: Ptr LoggingConfig
-    -> IO ()
+    :: Ptr LoggingConfig -> IO ()
 
 -- }}} pj logging configuration -----------------------------------------------
 -- {{{ pj media configuration -------------------------------------------------
@@ -74,8 +88,7 @@ data MediaConfig
 foreign import ccall "create_pjsua_media_config" createMediaConfig
     :: IO (Ptr MediaConfig)
 foreign import ccall "pjsua_media_config_default" defaultMedaiConfig
-    :: Ptr MediaConfig
-    -> IO ()
+    :: Ptr MediaConfig -> IO ()
 
 -- }}} pj media configuration -------------------------------------------------
 
@@ -99,8 +112,7 @@ data RxData
 type OnIncomingCallHandler = AccountId -> CallId -> Ptr RxData -> IO ()
 
 foreign import ccall safe "wrapper" toOnIncomingCall
-    :: OnIncomingCallHandler
-    -> IO (FunPtr OnIncomingCallHandler)
+    :: OnIncomingCallHandler -> IO (FunPtr OnIncomingCallHandler)
 
 foreign import ccall "pjsua_set_on_incoming_call" setOnIncomingCallCallback
     :: Ptr PjSuaConfig -> FunPtr OnIncomingCallHandler -> IO ()
@@ -108,8 +120,7 @@ foreign import ccall "pjsua_set_on_incoming_call" setOnIncomingCallCallback
 type OnRegistrationStateHandler = AccountId -> IO ()
 
 foreign import ccall safe "wrapper" toOnRegistrationState
-    :: OnRegistrationStateHandler
-    -> IO (FunPtr OnRegistrationStateHandler)
+    :: OnRegistrationStateHandler -> IO (FunPtr OnRegistrationStateHandler)
 
 foreign import ccall "pjsua_set_on_incoming_call" setOnRegistrationStateCallback
     :: Ptr PjSuaConfig -> FunPtr OnRegistrationStateHandler -> IO ()
@@ -117,8 +128,7 @@ foreign import ccall "pjsua_set_on_incoming_call" setOnRegistrationStateCallback
 type OnMediaStateHandler = CallId -> IO ()
 
 foreign import ccall safe "wrapper" toOnMediaState
-    :: OnMediaStateHandler
-    -> IO (FunPtr OnMediaStateHandler)
+    :: OnMediaStateHandler -> IO (FunPtr OnMediaStateHandler)
 
 foreign import ccall "pjsua_set_on_media_state" setOnMediaStateCallback
     :: Ptr PjSuaConfig -> FunPtr OnMediaStateHandler -> IO ()
@@ -127,27 +137,40 @@ foreign import ccall "pjsua_set_on_media_state" setOnMediaStateCallback
 data Reason
 data MsgData
 
+-- | Send response to incoming INVITE request with call setting param.
+-- Depending on the status code specified as parameter, this function may send
+-- provisional response, establish the call, or terminate the call. Notes about
+-- call setting:
+--
+--  * if call setting is changed in the subsequent call to this function, only
+--    the first call setting supplied will applied. So normally application
+--    will not supply call setting before getting confirmation from the user.
+--  * if no call setting is supplied when SDP has to be sent, i.e: answer with
+--    status code 183 or 2xx, the default call setting will be used, check
+--    pjsua_call_setting for its default values.
 foreign import ccall "pjsua_call_answer" callAnswer
-    :: CallId -> CUInt -> Ptr Reason -> Ptr MsgData -> IO PjStatus
-
--- pj_status_t pjsua_call_answer    (   pjsua_call_id   call_id,
---        unsigned    code,
---        const pj_str_t *    reason,
---        const pjsua_msg_data *      msg_data
---    )
-
-foreign import ccall "pjsua_call_hangup" callHangup
     :: CallId
     -> CUInt
+    -- ^ Status code to be used to answer the call.
     -> Ptr Reason
+    -- ^ Optional reason phrase which will be find into SIP header. If null,
+    -- the default phrase will be used.
     -> Ptr MsgData
+    -- ^ Optional list of headers to be added to SIP msg.
     -> IO PjStatus
 
--- pj_status_t pjsua_call_hangup   (   pjsua_call_id   call_id,
---         unsigned    code,
---         const pj_str_t *    reason,
---         const pjsua_msg_data *      msg_data
---     )
+-- | Hangup call by using method that is appropriate according to the call
+-- state. This function is different than answering the call with 3xx-6xx
+-- response (with pjsua_call_answer()), in that this function will hangup the
+-- call regardless of the state and role of the call, while pjsua_call_answer()
+-- only works with incoming calls on EARLY state.
+foreign import ccall "pjsua_call_hangup" callHangup
+    :: CallId
+    -> CUInt -- ^ Status code to be used to hangup the call.
+    -> Ptr Reason -- ^ Optional reason phrase which will be find into SIP
+                  --   header. If null, the default phrase will be used.
+    -> Ptr MsgData -- ^ Optional list of headers to be added to SIP msg.
+    -> IO PjStatus
 
 data TransportConfig
 data TransportId
@@ -229,10 +252,23 @@ foreign import ccall "setAccountDataType" setAccountDataType
 foreign import ccall "setAccountData" setAccountData
     :: (Ptr AccountConfig) -> CInt -> Ptr PjString -> IO ()
 
+-- | Add a new account to hsua (pjsua). If registration is configured for this
+-- account, this function would also start the SIP registration session with
+-- the SIP registrar server. This SIP registration session will be maintained
+-- internally by the library, and application doesn't need to do anything to
+-- maintain the registration session.
 foreign import ccall "pjsua_acc_add" setAccount
-    :: (Ptr AccountConfig) -> CInt -> Ptr AccountId -> IO PjStatus
--- status = pjsua_acc_add(&cfg, PJ_TRUE, &acc_id);
-
+    :: Ptr AccountConfig
+    -- ^ Account configuration.
+    -> CInt
+    -- ^ If non-zero, this account will be set as the default account. The
+    -- default account will be used when sending outgoing requests
+    -- (e.g. making call) when no account is specified, and when receiving
+    -- incoming requests when the request does not match any accounts. It is
+    -- recommended that default account is set to local/LAN account.
+    -> Ptr AccountId
+    -- ^ Pointer to receive account ID of the new account.
+    -> IO PjStatus
 
 foreign import ccall "pjsua_verify_sip_url" verifySipUrl
     :: CString -> IO PjStatus
@@ -243,22 +279,26 @@ foreign import ccall "pjsua_verify_url" verifyTelUrl
 data CallSetting
 data UserData
 
+-- | Make call to specified URI.
 foreign import ccall "pjsua_call_make_call" makeCall
     :: AccountId
+    -- ^ Account id for account we want to originate the call.
     -> Ptr PjString
+    -- ^ Destination URI in format \"sip:(name/number)@address.com\".
     -> Ptr CallSetting
+    -- ^ Optional ('nullPtr') call settings.
     -> Ptr UserData
+    -- ^ Optional ('nullPtr') arbitrary user data to be attached to the call,
+    -- and can be retrieved later.
     -> Ptr MsgData
+    -- ^ Optional ('nullPtr') headers to be added to SIP msg.
     -> Ptr CallId
+    -- ^ Optional ('nullPtr') Pointer to CallId where the call id will be
+    -- stored.
     -> IO PjStatus
--- pj_status_t pjsua_call_make_call     (   pjsua_acc_id    acc_id,
---        const pj_str_t *    dst_uri,
---        const pjsua_call_setting *      opt,
---        void *      user_data,
---        const pjsua_msg_data *      msg_data,
---        pjsua_call_id *     p_call_id
---    )
 
+-- | Terminate (end) all calls. In other words this will call 'callHangup' to
+-- all currently active calls.
 foreign import ccall "pjsua_call_hangup_all" hanhupAll :: IO ()
 
 foreign import ccall "pjsua_set_null_snd_dev" setNullSndDev :: IO ()
