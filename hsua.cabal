@@ -1,0 +1,62 @@
+name:                hsua
+version:             0.1.0.0
+-- synopsis:
+-- description:
+license:             GPL-2
+license-file:        LICENSE
+author:              Jan Sipr
+maintainer:          jan.sipr@ixperta.com
+--copyright:
+category:            Telephony
+build-type:          Simple
+extra-source-files:  ChangeLog.md
+cabal-version:       >=1.10
+
+flag pedantic
+    description:          Pass additional warning flags and -Werror to GHC.
+    default:              False
+    manual:               True
+
+library
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  pkgconfig-depends:   libpjproject >= 2.1.0
+
+  other-extensions:
+    ForeignFunctionInterface
+  exposed-modules:
+    Phone.Internal.FFI
+  -- other-modules:
+  c-sources:
+    cbits/pj_string.c
+    cbits/pjsua_config.c
+
+  build-depends:
+    base >=4.8 && <4.9
+
+  ghc-options:
+    -Wall
+    -fwarn-tabs
+    -fwarn-missing-import-lists
+    -fwarn-implicit-prelude
+    -threaded
+    -rtsopts=all
+
+  if flag(pedantic)
+    ghc-options:        -Werror
+
+executable test
+  hs-source-dirs:       test
+  main-is:              test.hs
+  default-language:     Haskell2010
+  other-extensions:
+    OverloadedStrings
+  -- other-modules:
+  build-depends:
+    base >=4.8 && <4.9
+    , hsua
+  ghc-options:
+    -Wall
+    -fwarn-tabs
+    -fwarn-missing-import-lists
+    -fwarn-implicit-prelude
