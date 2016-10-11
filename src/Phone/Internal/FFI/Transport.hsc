@@ -1,0 +1,70 @@
+{-# LANGUAGE ForeignFunctionInterface #-}
+-- |
+-- Module:       $HEADER$
+-- Description:  Low level FFI.
+-- Copyright:
+-- License:      GPL-2
+--
+-- Maintainer:   Jan Sipr <jan.sipr@ixperta.com>
+-- Stability:    experimental
+-- Portability:  GHC specific language extensions.
+module Phone.Internal.FFI.Transport
+  where
+
+import Control.Monad
+import Foreign.C.Types
+import Foreign.C.String
+import Foreign.Ptr
+import Foreign.Storable
+import Foreign.Marshal.Alloc
+
+import Phone.Internal.FFI.Common
+
+-- This allows to retrieve value from enums and defines
+-- Pjsua uses extremely tricky enums...
+#let enumToValue t = "%d", (int)t
+
+#include <pjsua-lib/pjsua.h>
+
+data TransportConfig
+data TransportId
+
+foreign import ccall "create_pjsua_transport_config" createTransportConfig
+    :: IO (Ptr TransportConfig)
+
+foreign import ccall "pjsua_transport_config_set_port" setPort
+    :: Ptr TransportConfig -> CUInt -> IO ()
+
+udpTransport :: CInt
+udpTransport = #{enumToValue PJSIP_TRANSPORT_UDP}
+
+tcpTransport :: CInt
+tcpTransport = #{enumToValue PJSIP_TRANSPORT_TCP}
+
+foreign import ccall "pjsua_transport_create" createTransport
+    :: CInt -> Ptr TransportConfig -> Ptr TransportId -> IO PjStatus
+
+-- data TransportType =
+--     Unspecified
+--     | UDP
+--     | TCP
+--     | TLS
+--     | SCTP
+--     | LOOP
+--     | LOOP_DGRAM
+--     | START_OTHER
+--     | IPV6
+--     | UDP6
+--     | TCP6
+--     | TLS6
+--   deriving (Show, Eq)
+--
+-- instance Enum TransportType where
+--   fromEnum Unspecified = 0
+--   fromEnum UDP = 1
+--   fromEnum TCP = 2
+--
+--   toEnum 0 = PlainKey
+--   toEnum 1 = SpecialKey
+--   toEnum 2 = NoKey
+--   toEnum unmatched = error ("Key.toEnum: Cannot match " ++ show unmatched)

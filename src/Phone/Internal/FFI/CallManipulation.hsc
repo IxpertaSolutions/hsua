@@ -1,0 +1,94 @@
+{-# LANGUAGE ForeignFunctionInterface #-}
+-- |
+-- Module:       $HEADER$
+-- Description:  Low level FFI.
+-- Copyright:
+-- License:      GPL-2
+--
+-- Maintainer:   Jan Sipr <jan.sipr@ixperta.com>
+-- Stability:    experimental
+-- Portability:  GHC specific language extensions.
+module Phone.Internal.FFI.CallManipulation
+  where
+
+-- GHC lower than 8.0 don't have alignment macro.
+#if __GLASGOW_HASKELL__ < 800
+#let alignment t = "%lu", (unsigned long)offsetof(struct {char x__; t (y__); }, y__)
+#endif
+
+-- This allows to retrieve value from enums and defines
+-- Pjsua uses extremely tricky enums...
+#let enumToValue t = "%d", (int)t
+
+#include <pjsua-lib/pjsua.h>
+
+import Control.Monad
+import Foreign.C.Types
+import Foreign.C.String
+import Foreign.Ptr
+import Foreign.Storable
+import Foreign.Marshal.Alloc
+
+import Text.Show (Show)
+
+import Phone.Internal.FFI.Common
+import Phone.Internal.FFI.Logging
+import Phone.Internal.FFI.Media
+import Phone.Internal.FFI.Account
+
+-- | Send response to incoming INVITE request with call setting param.
+-- Depending on the status code specified as parameter, this function may send
+-- provisional response, establish the call, or terminate the call. Notes about
+-- call setting:
+--
+--  * if call setting is changed in the subsequent call to this function, only
+--    the first call setting supplied will applied. So normally application
+--    will not supply call setting before getting confirmation from the user.
+--  * if no call setting is supplied when SDP has to be sent, i.e: answer with
+--    status code 183 or 2xx, the default call setting will be used, check
+--    pjsua_call_setting for its default values.
+foreign import ccall "pjsua_call_answer" callAnswer
+    :: CallId
+    -> CUInt
+    -- ^ Status code to be used to answer the call.
+    -> Ptr Reason
+    -- ^ Optional reason phrase which will be find into SIP header. If null,
+    -- the default phrase will be used.
+    -> Ptr MsgData
+    -- ^ Optional list of headers to be added to SIP msg.
+    -> IO PjStatus
+
+-- | Hangup call by using method that is appropriate according to the call
+-- state. This function is different than answering the call with 3xx-6xx
+-- response (with pjsua_call_answer()), in that this function will hangup the
+-- call regardless of the state and role of the call, while pjsua_call_answer()
+-- only works with incoming calls on EARLY state.
+foreign import ccall "pjsua_call_hangup" callHangup
+    :: CallId
+    -> CUInt -- ^ Status code to be used to hangup the call.
+    -> Ptr Reason -- ^ Optional reason phrase which will be find into SIP
+                  --   header. If null, the default phrase will be used.
+    -> Ptr MsgData -- ^ Optional list of headers to be added to SIP msg.
+    -> IO PjStatus
+
+-- | Make call to specified URI.
+foreign import ccall "pjsua_call_make_call" makeCall
+    :: AccountId
+    -- ^ Account id for account we want to originate the call.
+    -> Ptr PjString
+    -- ^ Destination URI in format \"sip:(name/number)@address.com\".
+    -> Ptr CallSetting
+    -- ^ Optional ('nullPtr') call settings.
+    -> Ptr UserData
+    -- ^ Optional ('nullPtr') arbitrary user data to be attached to the call,
+    -- and can be retrieved later.
+    -> Ptr MsgData
+    -- ^ Optional ('nullPtr') headers to be added to SIP msg.
+    -> Ptr CallId
+    -- ^ Optional ('nullPtr') Pointer to CallId where the call id will be
+    -- stored.
+    -> IO PjStatus
+
+-- | Terminate (end) all calls. In other words this will call 'callHangup' to
+-- all currently active calls.
+foreign import ccall "pjsua_call_hangup_all" hanhupAll :: IO ()

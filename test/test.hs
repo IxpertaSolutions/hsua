@@ -11,6 +11,13 @@ import Control.Concurrent
 import System.IO
 
 import Phone.Internal.FFI
+import Phone.Internal.FFI.Common
+import Phone.Internal.FFI.Transport
+import Phone.Internal.FFI.Media
+import Phone.Internal.FFI.Account
+import Phone.Internal.FFI.PjString
+import Phone.Internal.FFI.CallManipulation
+import Phone.Internal.FFI.Configuration
 
 incomingCallHandler :: OnIncomingCallHandler
 incomingCallHandler _ callId _ = do
