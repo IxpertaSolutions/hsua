@@ -1,23 +1,53 @@
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import Control.Concurrent (threadDelay)
+import Control.Monad ((>>=))
+import Data.Function (($), (.))
 import Data.Monoid ((<>))
-import Foreign.C.String
-import Foreign.C.Types
-import Foreign.Ptr
-import Foreign.Marshal.Alloc
-import Foreign.Storable
-import Control.Concurrent
-import System.IO
+import Foreign.C.String (newCString)
+import Foreign.C.Types (CInt)
+import Foreign.Marshal.Alloc (malloc)
+import Foreign.Ptr (nullPtr)
+import Foreign.Storable (peek)
+import System.IO (BufferMode (NoBuffering), IO, hSetBuffering, putStrLn, stdout)
+import Text.Show (show)
 
-import Phone.Internal.FFI
-import Phone.Internal.FFI.Common
-import Phone.Internal.FFI.Transport
-import Phone.Internal.FFI.Media
+import Phone.Internal.FFI (createPjSua, destroyPjSua, pjsuaStart, printDevices)
 import Phone.Internal.FFI.Account
-import Phone.Internal.FFI.PjString
-import Phone.Internal.FFI.CallManipulation
+    ( createAccountConfig
+    , credDataPlainPasswd
+    , defaultAccountConfig
+    , setAccount
+    , setAccountCredCount
+    , setAccountData
+    , setAccountDataType
+    , setAccountRealm
+    , setAccountRegUri
+    , setAccountSchema
+    , setAccountUsername
+    , setAccoutId
+    )
+import Phone.Internal.FFI.CallManipulation (callAnswer, hanhupAll, makeCall)
+import Phone.Internal.FFI.Common (pjSuccess, pjTrue)
 import Phone.Internal.FFI.Configuration
+    ( OnIncomingCallHandler
+    , createPjConfig
+    , defaultPjConfig
+    , initializePjSua
+    , setOnIncomingCallCallback
+    , setOnMediaStateCallback
+    , toOnIncomingCall
+    , toOnMediaState
+    )
+import Phone.Internal.FFI.Media (createMediaConfig, defaultMedaiConfig)
+import Phone.Internal.FFI.PjString (createPjString, deletePjString)
+import Phone.Internal.FFI.Transport
+    ( createTransport
+    , createTransportConfig
+    , udpTransport
+    )
 
 incomingCallHandler :: OnIncomingCallHandler
 incomingCallHandler _ callId _ = do
@@ -43,13 +73,13 @@ main = do
     toOnMediaState onMediaState >>= setOnMediaStateCallback pjCfg
     mediaCfg <- createMediaConfig
     defaultMedaiConfig mediaCfg
-    initializePjSua pjCfg nullPtr mediaCfg
+    _ <- initializePjSua pjCfg nullPtr mediaCfg
 
     -- Initialize transport
     transportCfg <- createTransportConfig
     -- setPort transportCfg 5060
     createTransport udpTransport transportCfg nullPtr >>= (putStrLn . show)
-    pjsuaStart
+    _ <- pjsuaStart
     putStrLn "****************************************"
     printDevices
     putStrLn "****************************************"
@@ -57,7 +87,8 @@ main = do
     -- Create account
     accCfg <- createAccountConfig
     defaultAccountConfig accCfg
-    newCString "sip:420123456789@192.168.0.30" >>= createPjString >>= setAccoutId accCfg
+    newCString "sip:420123456789@192.168.0.30" >>= createPjString
+        >>= setAccoutId accCfg
     newCString "sip:192.168.0.30" >>= createPjString >>= setAccountRegUri accCfg
     setAccountCredCount accCfg 1
     newCString "*" >>= createPjString >>= setAccountRealm accCfg 0
@@ -66,7 +97,7 @@ main = do
     setAccountDataType accCfg 0 credDataPlainPasswd
     newCString "123" >>= createPjString >>= setAccountData accCfg 0
     accountId <- malloc
-    setAccount accCfg pjTrue accountId
+    _ <- setAccount accCfg pjTrue accountId
     --setNullSndDev
 
     threadDelay 1000000

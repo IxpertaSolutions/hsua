@@ -1,4 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 -- |
 -- Module:       $HEADER$
 -- Description:  Low level FFI.
@@ -11,14 +12,12 @@
 module Phone.Internal.FFI.Transport
   where
 
-import Control.Monad
-import Foreign.C.Types
-import Foreign.C.String
-import Foreign.Ptr
-import Foreign.Storable
-import Foreign.Marshal.Alloc
+import Foreign.C.Types (CInt(CInt), CUInt(CUInt))
+import Foreign.Ptr (Ptr)
 
-import Phone.Internal.FFI.Common
+import System.IO (IO)
+
+import Phone.Internal.FFI.Common (PjStatus)
 
 -- This allows to retrieve value from enums and defines
 -- Pjsua uses extremely tricky enums...

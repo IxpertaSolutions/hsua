@@ -1,4 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 -- |
 -- Module:       $HEADER$
 -- Description:  Low level FFI.
@@ -17,14 +18,12 @@ module Phone.Internal.FFI.Account
 
 #include <pjsua-lib/pjsua.h>
 
-import Control.Monad
-import Foreign.C.Types
-import Foreign.C.String
-import Foreign.Ptr
-import Foreign.Storable
-import Foreign.Marshal.Alloc
+import Foreign.C.Types (CInt(CInt))
+import Foreign.Ptr (Ptr)
 
-import Phone.Internal.FFI.Common
+import System.IO (IO)
+
+import Phone.Internal.FFI.Common (PjStatus, PjString)
 
 type AccountId = CInt
 data AccountConfig

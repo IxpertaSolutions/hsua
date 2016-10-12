@@ -1,4 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 -- |
 -- Module:       $HEADER$
 -- Description:  Low level FFI.
@@ -22,19 +23,21 @@ module Phone.Internal.FFI.CallManipulation
 
 #include <pjsua-lib/pjsua.h>
 
-import Control.Monad
-import Foreign.C.Types
-import Foreign.C.String
-import Foreign.Ptr
-import Foreign.Storable
-import Foreign.Marshal.Alloc
+import Foreign.C.Types (CInt(CInt), CUInt(CUInt))
+import Foreign.Ptr (Ptr)
 
-import Text.Show (Show)
+import System.IO (IO)
 
-import Phone.Internal.FFI.Common
-import Phone.Internal.FFI.Logging
-import Phone.Internal.FFI.Media
-import Phone.Internal.FFI.Account
+import Phone.Internal.FFI.Common 
+    ( CallId
+    , CallSetting
+    , MsgData
+    , PjStatus
+    , PjString
+    , Reason
+    , UserData
+    )
+import Phone.Internal.FFI.Account (AccountId)
 
 -- | Send response to incoming INVITE request with call setting param.
 -- Depending on the status code specified as parameter, this function may send

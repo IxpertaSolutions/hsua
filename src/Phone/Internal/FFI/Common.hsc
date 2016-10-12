@@ -1,4 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 -- |
 -- Module:       $HEADER$
 -- Description:  Low level FFI.
@@ -11,7 +12,7 @@
 module Phone.Internal.FFI.Common
   where
 
-import Foreign.C.Types
+import Foreign.C.Types (CInt)
 
 -- This allows to retrieve value from enums and defines
 -- Pjsua uses extremely tricky enums...

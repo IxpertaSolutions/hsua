@@ -1,4 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 -- |
 -- Module:       $HEADER$
 -- Description:  Low level FFI.
@@ -11,12 +12,9 @@
 module Phone.Internal.FFI.Media
   where
 
-import Control.Monad
-import Foreign.C.Types
-import Foreign.C.String
-import Foreign.Ptr
-import Foreign.Storable
-import Foreign.Marshal.Alloc
+import Foreign.Ptr (Ptr)
+
+import System.IO (IO)
 
 data MediaConfig
 

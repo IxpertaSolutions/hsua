@@ -1,4 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 -- |
 -- Module:       $HEADER$
 -- Description:  Low level FFI.
@@ -11,19 +12,16 @@
 module Phone.Internal.FFI.Configuration
   where
 
-import Control.Monad
-import Foreign.C.Types
-import Foreign.C.String
-import Foreign.Ptr
-import Foreign.Storable
-import Foreign.Marshal.Alloc
+import Foreign.C.Types (CInt(CInt))
+import Foreign.Ptr (FunPtr, Ptr)
 
-import Text.Show (Show)
+import System.IO (IO)
 
-import Phone.Internal.FFI.Common
-import Phone.Internal.FFI.Logging
-import Phone.Internal.FFI.Media
-import Phone.Internal.FFI.Account
+import Phone.Internal.FFI.Common (PjStatus, CallId, SipEvent, RxData)
+import Phone.Internal.FFI.Logging (LoggingConfig)
+import Phone.Internal.FFI.Media (MediaConfig)
+import Phone.Internal.FFI.Account (AccountId)
+
 
 data PjSuaConfig
 
