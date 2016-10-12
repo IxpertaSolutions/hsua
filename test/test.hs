@@ -19,6 +19,7 @@ import Phone.Internal.FFI.Account
     ( createAccountConfig
     , credDataPlainPasswd
     , defaultAccountConfig
+    , isAccoutRegistred
     , setAccount
     , setAccountCredCount
     , setAccountData
@@ -33,13 +34,16 @@ import Phone.Internal.FFI.CallManipulation (callAnswer, hanhupAll, makeCall)
 import Phone.Internal.FFI.Common (pjSuccess, pjTrue)
 import Phone.Internal.FFI.Configuration
     ( OnIncomingCallHandler
+    , OnRegistrationStateHandler
     , createPjConfig
     , defaultPjConfig
     , initializePjSua
     , setOnIncomingCallCallback
     , setOnMediaStateCallback
+    , setOnRegistrationStateCallback
     , toOnIncomingCall
     , toOnMediaState
+    , toOnRegistrationState
     )
 import Phone.Internal.FFI.Media (createMediaConfig, defaultMedaiConfig)
 import Phone.Internal.FFI.PjString (createPjString, deletePjString)
@@ -53,6 +57,13 @@ incomingCallHandler :: OnIncomingCallHandler
 incomingCallHandler _ callId _ = do
     res <- callAnswer callId 200 nullPtr nullPtr
     putStrLn $ "call accept result: " <> show res
+
+onRegistrationHandler :: OnRegistrationStateHandler
+onRegistrationHandler id = do
+    putStrLn "#####################################################"
+    r <- isAccoutRegistred id
+    putStrLn $ "is account registred: " <> show r
+    putStrLn "#####################################################"
 
 onMediaState :: CInt -> IO ()
 onMediaState _ =
@@ -71,6 +82,8 @@ main = do
     defaultPjConfig pjCfg
     toOnIncomingCall incomingCallHandler >>= setOnIncomingCallCallback pjCfg
     toOnMediaState onMediaState >>= setOnMediaStateCallback pjCfg
+    toOnRegistrationState onRegistrationHandler
+        >>= setOnRegistrationStateCallback pjCfg
     mediaCfg <- createMediaConfig
     defaultMedaiConfig mediaCfg
     _ <- initializePjSua pjCfg nullPtr mediaCfg

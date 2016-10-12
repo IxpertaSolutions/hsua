@@ -78,3 +78,14 @@ foreign import ccall "pjsua_acc_add" setAccount
     -> Ptr AccountId
     -- ^ Pointer to receive account ID of the new account.
     -> IO PjStatus
+
+-- | Check if the account with given ID is registred. Boolean is simulated by
+-- CInt.
+--
+-- Return value:
+--
+-- * 0 - unregistred
+-- * non-zero - registred
+foreign import ccall "is_accout_registred" isAccoutRegistred
+    :: AccountId
+    -> IO CInt

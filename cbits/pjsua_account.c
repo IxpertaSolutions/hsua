@@ -1,4 +1,5 @@
 #include <pjsua-lib/pjsua.h>
+#include <stdbool.h>
 
 pjsua_acc_config* crete_pjsua_acc_config()
 {
@@ -45,3 +46,9 @@ void setAccountData(pjsua_acc_config *account, unsigned i, pj_str_t *p_str)
     account->cred_info[i].data = *p_str;
 }
 
+int is_accout_registred(pjsua_acc_id id)
+{
+    pjsua_acc_info info;
+    pjsua_acc_get_info(id, &info);
+    return (info.status/100 == 2 && info.expires > 0);
+}
