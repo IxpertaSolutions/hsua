@@ -54,7 +54,7 @@ type OnRegistrationStateHandler = AccountId -> IO ()
 foreign import ccall safe "wrapper" toOnRegistrationState
     :: OnRegistrationStateHandler -> IO (FunPtr OnRegistrationStateHandler)
 
-foreign import ccall "pjsua_set_on_incoming_call" setOnRegistrationStateCallback
+foreign import ccall "pjsua_set_on_reg_state" setOnRegistrationStateCallback
     :: Ptr PjSuaConfig -> FunPtr OnRegistrationStateHandler -> IO ()
 
 type OnMediaStateHandler = CallId -> IO ()
