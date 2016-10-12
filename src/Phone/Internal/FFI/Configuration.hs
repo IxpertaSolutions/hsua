@@ -57,6 +57,14 @@ foreign import ccall safe "wrapper" toOnRegistrationState
 foreign import ccall "pjsua_set_on_reg_state" setOnRegistrationStateCallback
     :: Ptr PjSuaConfig -> FunPtr OnRegistrationStateHandler -> IO ()
 
+type OnRegistrationStartedHandler = AccountId -> CInt -> IO ()
+
+foreign import ccall safe "wrapper" toOnRegistrationStarted
+    :: OnRegistrationStartedHandler -> IO (FunPtr OnRegistrationStartedHandler)
+
+foreign import ccall "pjsua_set_on_reg_started" setOnRegistrationStartedCallback
+    :: Ptr PjSuaConfig -> FunPtr OnRegistrationStartedHandler -> IO ()
+
 type OnMediaStateHandler = CallId -> IO ()
 
 foreign import ccall safe "wrapper" toOnMediaState
