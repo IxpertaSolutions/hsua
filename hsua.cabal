@@ -29,6 +29,8 @@ library
     Phone.Call
     Phone.Exception
     Phone.Handlers
+    Phone.Run
+  other-modules:
     Phone.Internal.FFI
     Phone.Internal.FFI.Account
     Phone.Internal.FFI.CallManipulation
@@ -38,8 +40,6 @@ library
     Phone.Internal.FFI.Media
     Phone.Internal.FFI.PjString
     Phone.Internal.FFI.Transport
-    Phone.Run
-  -- other-modules:
   c-sources:
     cbits/pj_string.c
     cbits/pjsua_config.c
@@ -65,8 +65,33 @@ library
     ghc-options:        -Werror
 
 executable test
-  hs-source-dirs:       test
+  hs-source-dirs:       test, src
   main-is:              test.hs
+  default-language:     Haskell2010
+  other-extensions:
+    OverloadedStrings
+  other-modules:
+    Phone.Internal.FFI
+    Phone.Internal.FFI.Account
+    Phone.Internal.FFI.CallManipulation
+    Phone.Internal.FFI.Common
+    Phone.Internal.FFI.Configuration
+    Phone.Internal.FFI.Logging
+    Phone.Internal.FFI.Media
+    Phone.Internal.FFI.PjString
+    Phone.Internal.FFI.Transport
+  build-depends:
+    base >=4.8 && <4.9
+    , hsua
+  ghc-options:
+    -Wall
+    -fwarn-tabs
+    -fwarn-missing-import-lists
+    -fwarn-implicit-prelude
+
+executable example
+  hs-source-dirs:       example
+  main-is:              example.hs
   default-language:     Haskell2010
   other-extensions:
     OverloadedStrings
@@ -79,3 +104,6 @@ executable test
     -fwarn-tabs
     -fwarn-missing-import-lists
     -fwarn-implicit-prelude
+
+  if flag(pedantic)
+    ghc-options:        -Werror

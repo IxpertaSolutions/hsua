@@ -11,7 +11,8 @@
 -- Stability:    experimental
 -- Portability:  GHC specific language extensions.
 module Phone.Call
-    ( answerCall
+    ( CallId
+    , answerCall
     , FFI.hangupAll
     , hangupCall
     , makeCall

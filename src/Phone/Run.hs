@@ -12,6 +12,7 @@
 -- Portability:  GHC specific language extensions.
 module Phone.Run
     ( withPhone
+    , setNullSndDev
     )
   where
 
@@ -43,7 +44,7 @@ import Phone.Handlers
         , onRegistrationStateChange
         )
     )
-import Phone.Internal.FFI (createPjSua, destroyPjSua, pjsuaStart)
+import Phone.Internal.FFI (createPjSua, destroyPjSua, pjsuaStart, setNullSndDev)
 import Phone.Internal.FFI.CallManipulation (hangupAll)
 import Phone.Internal.FFI.Common (pjSuccess)
 import Phone.Internal.FFI.Configuration

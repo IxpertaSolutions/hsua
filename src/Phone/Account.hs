@@ -11,7 +11,8 @@
 -- Stability:    experimental
 -- Portability:  GHC specific language extensions.
 module Phone.Account
-    ( AccountId
+    ( Account(..)
+    , AccountId
     , AuthScheme(..)
     , createAccount
     , isAccountRegistered
