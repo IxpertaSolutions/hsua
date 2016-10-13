@@ -14,7 +14,13 @@ import Foreign.Storable (peek)
 import System.IO (BufferMode (NoBuffering), IO, hSetBuffering, putStrLn, stdout)
 import Text.Show (show)
 
-import Phone.Internal.FFI (createPjSua, destroyPjSua, pjsuaStart, printDevices)
+import Phone.Internal.FFI
+    ( createPjSua
+    , destroyPjSua
+    , pjsuaStart
+    , printDevices
+    , setNullSndDev
+    )
 import Phone.Internal.FFI.Account
     ( createAccountConfig
     , credDataPlainPasswd
@@ -26,11 +32,11 @@ import Phone.Internal.FFI.Account
     , setAccountDataType
     , setAccountRealm
     , setAccountRegUri
-    , setAccountSchema
+    , setAccountScheme
     , setAccountUsername
     , setAccoutId
     )
-import Phone.Internal.FFI.CallManipulation (callAnswer, hanhupAll, makeCall)
+import Phone.Internal.FFI.CallManipulation (answerCall, hangupAll, makeCall)
 import Phone.Internal.FFI.Common (pjSuccess, pjTrue)
 import Phone.Internal.FFI.Configuration
     ( OnIncomingCallHandler
@@ -55,7 +61,7 @@ import Phone.Internal.FFI.Transport
 
 incomingCallHandler :: OnIncomingCallHandler
 incomingCallHandler _ callId _ = do
-    res <- callAnswer callId 200 nullPtr nullPtr
+    res <- answerCall callId 200 nullPtr nullPtr
     putStrLn $ "call accept result: " <> show res
 
 onRegistrationHandler :: OnRegistrationStateHandler
@@ -100,24 +106,24 @@ main = do
     -- Create account
     accCfg <- createAccountConfig
     defaultAccountConfig accCfg
-    newCString "sip:420123456789@192.168.0.30" >>= createPjString
+    newCString "sip:420242492304@10.120.51.51" >>= createPjString
         >>= setAccoutId accCfg
-    newCString "sip:192.168.0.30" >>= createPjString >>= setAccountRegUri accCfg
+    newCString "sip:10.120.51.51" >>= createPjString >>= setAccountRegUri accCfg
     setAccountCredCount accCfg 1
     newCString "*" >>= createPjString >>= setAccountRealm accCfg 0
-    newCString "digest" >>= createPjString >>= setAccountSchema accCfg 0
-    newCString "420123456789" >>= createPjString >>= setAccountUsername accCfg 0
+    newCString "digest" >>= createPjString >>= setAccountScheme accCfg 0
+    newCString "420242492304" >>= createPjString >>= setAccountUsername accCfg 0
     setAccountDataType accCfg 0 credDataPlainPasswd
-    newCString "123" >>= createPjString >>= setAccountData accCfg 0
+    newCString "420242492304" >>= createPjString >>= setAccountData accCfg 0
     accountId <- malloc
     _ <- setAccount accCfg pjTrue accountId
-    --setNullSndDev
+    setNullSndDev
 
     threadDelay 1000000
     id' <- peek accountId
-    dst <- newCString "sip:420123456788@192.168.0.30" >>= createPjString
+    dst <- newCString "sip:420242492306@10.120.51.51" >>= createPjString
     makeCall id' dst nullPtr nullPtr nullPtr nullPtr >>= (putStrLn . show)
 
     threadDelay 10000000
-    hanhupAll
+    hangupAll
     destroyPjSua >>= (putStrLn . show)

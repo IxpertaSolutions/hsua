@@ -26,7 +26,7 @@ void setAccountRealm(pjsua_acc_config *account, unsigned i, pj_str_t *p_str)
     account->cred_info[i].realm = *p_str;
 }
 
-void setAccountSchema(pjsua_acc_config *account, unsigned i, pj_str_t *p_str)
+void setAccountScheme(pjsua_acc_config *account, unsigned i, pj_str_t *p_str)
 {
     account->cred_info[i].scheme = *p_str;
 }

@@ -28,7 +28,7 @@ import Foreign.Ptr (Ptr)
 
 import System.IO (IO)
 
-import Phone.Internal.FFI.Common 
+import Phone.Internal.FFI.Common
     ( CallId
     , CallSetting
     , MsgData
@@ -50,7 +50,7 @@ import Phone.Internal.FFI.Account (AccountId)
 --  * if no call setting is supplied when SDP has to be sent, i.e: answer with
 --    status code 183 or 2xx, the default call setting will be used, check
 --    pjsua_call_setting for its default values.
-foreign import ccall "pjsua_call_answer" callAnswer
+foreign import ccall "pjsua_call_answer" answerCall
     :: CallId
     -> CUInt
     -- ^ Status code to be used to answer the call.
@@ -66,12 +66,15 @@ foreign import ccall "pjsua_call_answer" callAnswer
 -- response (with pjsua_call_answer()), in that this function will hangup the
 -- call regardless of the state and role of the call, while pjsua_call_answer()
 -- only works with incoming calls on EARLY state.
-foreign import ccall "pjsua_call_hangup" callHangup
+foreign import ccall "pjsua_call_hangup" hangupCall
     :: CallId
-    -> CUInt -- ^ Status code to be used to hangup the call.
-    -> Ptr Reason -- ^ Optional reason phrase which will be find into SIP
-                  --   header. If null, the default phrase will be used.
-    -> Ptr MsgData -- ^ Optional list of headers to be added to SIP msg.
+    -> CUInt
+    -- ^ Status code to be used to hangup the call.
+    -> Ptr Reason
+    -- ^ Optional reason phrase which will be find into SIP
+    --   header. If null, the default phrase will be used.
+    -> Ptr MsgData
+    -- ^ Optional list of headers to be added to SIP msg.
     -> IO PjStatus
 
 -- | Make call to specified URI.
@@ -94,4 +97,4 @@ foreign import ccall "pjsua_call_make_call" makeCall
 
 -- | Terminate (end) all calls. In other words this will call 'callHangup' to
 -- all currently active calls.
-foreign import ccall "pjsua_call_hangup_all" hanhupAll :: IO ()
+foreign import ccall "pjsua_call_hangup_all" hangupAll :: IO ()

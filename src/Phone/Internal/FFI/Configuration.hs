@@ -35,8 +35,8 @@ foreign import ccall "pjsua_init" initializePjSua
 
 type OnCallStateHandler = CallId -> Ptr SipEvent -> IO ()
 
-foreign import ccall safe "wrapper"
-    toOnCallState :: OnCallStateHandler -> IO (FunPtr OnCallStateHandler)
+foreign import ccall safe "wrapper" toOnCallState
+    :: OnCallStateHandler -> IO (FunPtr OnCallStateHandler)
 
 foreign import ccall "pjsua_set_on_call_state" setOnCallStateCallback
     :: Ptr PjSuaConfig -> FunPtr OnCallStateHandler -> IO ()

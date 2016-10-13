@@ -46,7 +46,7 @@ foreign import ccall "setAccountCredCount" setAccountCredCount
 foreign import ccall "setAccountRealm" setAccountRealm
     :: (Ptr AccountConfig) -> CInt -> Ptr PjString -> IO ()
 
-foreign import ccall "setAccountSchema" setAccountSchema
+foreign import ccall "setAccountScheme" setAccountScheme
     :: (Ptr AccountConfig) -> CInt -> Ptr PjString -> IO ()
 
 foreign import ccall "setAccountUsername" setAccountUsername

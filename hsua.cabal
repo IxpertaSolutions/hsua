@@ -25,15 +25,20 @@ library
   other-extensions:
     ForeignFunctionInterface
   exposed-modules:
-    Phone.Internal.FFI.Transport
+    Phone.Account
+    Phone.Call
+    Phone.Exception
+    Phone.Handlers
+    Phone.Internal.FFI
+    Phone.Internal.FFI.Account
+    Phone.Internal.FFI.CallManipulation
     Phone.Internal.FFI.Common
+    Phone.Internal.FFI.Configuration
     Phone.Internal.FFI.Logging
     Phone.Internal.FFI.Media
-    Phone.Internal.FFI.Account
     Phone.Internal.FFI.PjString
-    Phone.Internal.FFI.CallManipulation
-    Phone.Internal.FFI.Configuration
-    Phone.Internal.FFI
+    Phone.Internal.FFI.Transport
+    Phone.Run
   -- other-modules:
   c-sources:
     cbits/pj_string.c
@@ -46,6 +51,7 @@ library
 
   build-depends:
     base >=4.8 && <4.9
+    , text
 
   ghc-options:
     -Wall
