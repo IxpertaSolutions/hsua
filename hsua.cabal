@@ -24,6 +24,9 @@ library
 
   other-extensions:
     ForeignFunctionInterface
+    , NoImplicitPrelude
+    , OverloadedStrings
+    , RecordWildCards
   exposed-modules:
     Phone.Account
     Phone.Call
@@ -33,6 +36,7 @@ library
   other-modules:
     Phone.Internal.FFI
     Phone.Internal.FFI.Account
+    Phone.Internal.FFI.CallInfo
     Phone.Internal.FFI.CallManipulation
     Phone.Internal.FFI.Common
     Phone.Internal.FFI.Configuration
@@ -42,12 +46,13 @@ library
     Phone.Internal.FFI.Transport
   c-sources:
     cbits/pj_string.c
-    cbits/pjsua_config.c
-    cbits/pjsua_media.c
-    cbits/pjsua_logging.c
-    cbits/pjsua_transport.c
     cbits/pjsua_account.c
+    cbits/pjsua_call_info.c
+    cbits/pjsua_config.c
     cbits/pjsua_device.c
+    cbits/pjsua_logging.c
+    cbits/pjsua_media.c
+    cbits/pjsua_transport.c
 
   build-depends:
     base >=4.8 && <4.9
@@ -69,10 +74,13 @@ executable test
   main-is:              test.hs
   default-language:     Haskell2010
   other-extensions:
-    OverloadedStrings
+    NoImplicitPrelude
+    , OverloadedStrings
+    , RecordWildCards
   other-modules:
     Phone.Internal.FFI
     Phone.Internal.FFI.Account
+    Phone.Internal.FFI.CallInfo
     Phone.Internal.FFI.CallManipulation
     Phone.Internal.FFI.Common
     Phone.Internal.FFI.Configuration
@@ -94,7 +102,9 @@ executable example
   main-is:              example.hs
   default-language:     Haskell2010
   other-extensions:
-    OverloadedStrings
+    NoImplicitPrelude
+    , OverloadedStrings
+    , RecordWildCards
   -- other-modules:
   build-depends:
     base >=4.8 && <4.9

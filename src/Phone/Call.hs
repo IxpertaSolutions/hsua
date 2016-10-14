@@ -12,10 +12,13 @@
 -- Portability:  GHC specific language extensions.
 module Phone.Call
     ( CallId
+    , FFI.CallState(..)
+    , CallInfo(..)
     , answerCall
     , FFI.hangupAll
     , hangupCall
     , makeCall
+    , getCallInfo
     )
   where
 
@@ -23,17 +26,40 @@ import Control.Applicative (pure)
 import Control.Exception.Base (Exception, throwIO)
 import Control.Monad ((>>=))
 import Data.Eq ((/=))
+import Data.Function (($))
 import Data.Int (Int)
 import Data.Text (Text, unpack)
 import Foreign.C.String (newCString)
-import Foreign.Marshal.Alloc (malloc)
+import Foreign.Marshal.Alloc (free, malloc)
 import Foreign.Ptr (nullPtr)
 import Foreign.Storable (peek)
 import Prelude (fromIntegral)
 import System.IO (IO)
 
-import Phone.Exception (PhoneException (AnswerCall, HangupCall, MakeCall))
+import Phone.Exception
+    ( PhoneException
+        ( AnswerCall
+        , GetCallInfo
+        , HangupCall
+        , MakeCall
+        )
+    )
 import Phone.Internal.FFI.Account (AccountId)
+import qualified Phone.Internal.FFI.CallInfo as FFI
+    ( CallState
+        ( Calling
+        , Confirmed
+        , Connecting
+        , Disconnected
+        , EarlyMedia
+        , Incoming
+        , Null
+        )
+    , createCallInfo
+    , getAccountId
+    , getCallInfo
+    , getCallState
+    )
 import qualified Phone.Internal.FFI.CallManipulation as FFI
     ( answerCall
     , hangupAll
@@ -42,6 +68,22 @@ import qualified Phone.Internal.FFI.CallManipulation as FFI
     )
 import Phone.Internal.FFI.Common (CallId, PjStatus, pjSuccess)
 import Phone.Internal.FFI.PjString (createPjString)
+
+
+data CallInfo = CallInfo
+    { accountId :: AccountId
+    , callState :: FFI.CallState
+    }
+
+getCallInfo :: CallId -> IO CallInfo
+getCallInfo callId = do
+    -- TODO: There is batter way to handle allocation and deallocation
+    info <- FFI.createCallInfo
+    FFI.getCallInfo callId info >>= check GetCallInfo
+    accId <- FFI.getAccountId info
+    state <- FFI.getCallState info
+    free info
+    pure $ CallInfo accId state
 
 answerCall
     :: CallId
@@ -66,8 +108,10 @@ makeCall accId url = do
     dst <- newCString (unpack url) >>= createPjString
     callId <- malloc
     FFI.makeCall accId dst nullPtr nullPtr nullPtr callId >>= check MakeCall
-    peek callId
-
+    res <- peek callId
+    -- TODO: There is batter way to handle allocation and deallocation
+    free callId
+    pure res
 
 check :: Exception e => e -> PjStatus -> IO ()
 check e ret = if ret /= pjSuccess

@@ -26,4 +26,5 @@ data PhoneException =
     | MakeCall
     | Start
     | Transport
+    | GetCallInfo
   deriving (Typeable, Show, Exception)
