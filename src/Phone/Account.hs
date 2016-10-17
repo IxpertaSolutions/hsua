@@ -16,6 +16,7 @@ module Phone.Account
     , AuthScheme(..)
     , createAccount
     , isAccountRegistered
+    , mkSimpleAccount
     )
   where
 
@@ -23,6 +24,7 @@ import Control.Monad ((>>=), return)
 import Data.Bool (Bool)
 import Data.Eq ((/=))
 import Data.Function ((.))
+import Data.Monoid ((<>))
 import Data.Text (Text, unpack)
 import Foreign.C.String (newCString)
 import Foreign.Marshal.Alloc (malloc)
@@ -48,7 +50,22 @@ import Phone.Internal.FFI.Account
 import Phone.Internal.FFI.Common (pjTrue)
 import Phone.Internal.FFI.PjString (createPjString)
 
+
 data AuthScheme = Digest | Basic
+
+mkSimpleAccount
+    :: Text -- ^ Sip server domain name or IP
+    -> Text -- ^ Account name
+    -> Text -- ^ Password
+    -> Account
+mkSimpleAccount server user password = Account
+    { accountId = "sip:" <> user <> "@" <> server
+    , registrationUri = "sip:" <> server
+    , realm = "*"
+    , authScheme = Digest
+    , userName = user
+    , password = password
+    }
 
 data Account = Account
     { accountId :: Text
