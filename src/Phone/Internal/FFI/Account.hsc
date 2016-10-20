@@ -89,3 +89,9 @@ foreign import ccall "pjsua_acc_add" setAccount
 foreign import ccall "is_accout_registred" isAccoutRegistred
     :: AccountId
     -> IO CInt
+
+-- | This will unregister the account from the SIP server, if necessary, and
+-- terminate server side presence subscriptions associated with this account.
+foreign import ccall "pjsua_acc_del" removeAccount
+    :: AccountId
+    -> IO PjStatus

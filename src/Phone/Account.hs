@@ -17,6 +17,7 @@ module Phone.Account
     , createAccount
     , isAccountRegistered
     , mkSimpleAccount
+    , removeAccount
     )
   where
 
@@ -38,6 +39,7 @@ import Phone.Internal.FFI.Account
     , credDataPlainPasswd
     , defaultAccountConfig
     , isAccoutRegistred
+    , removeAccount
     , setAccount
     , setAccountCredCount
     , setAccountData
