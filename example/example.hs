@@ -17,6 +17,9 @@ import Phone.Account
     , AuthScheme
         ( Digest
         )
+    , WhenRegister
+        ( Now
+        )
     , accountId
     , authScheme
     , createAccount
@@ -37,7 +40,7 @@ import Phone.Handlers
     , onRegistrationStarted
     , onRegistrationStateChange
     )
-import Phone.Run (withPhone, setNullSndDev)
+import Phone.Run (setNullSndDev, withPhone)
 
 
 incomingCallHandler :: AccountId -> CallId -> IO ()
@@ -52,7 +55,7 @@ onRegistrationHandler id = do
 
 main :: IO ()
 main = withPhone handlers $ do
-    accId <- createAccount Account
+    accId <- createAccount Now Account
         { accountId = "sip:123@10.0.0.1"
         , registrationUri = "sip:10.0.0.1"
         , realm = "*"
@@ -63,6 +66,7 @@ main = withPhone handlers $ do
 
     threadDelay 1000000
     setNullSndDev
+    putStrLn "creating call"
     _ <- makeCall accId "sip:1234@10.0.0.2"
 
     threadDelay 10000000

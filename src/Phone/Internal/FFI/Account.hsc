@@ -61,6 +61,25 @@ foreign import ccall "setAccountDataType" setAccountDataType
 foreign import ccall "setAccountData" setAccountData
     :: (Ptr AccountConfig) -> CInt -> Ptr PjString -> IO ()
 
+foreign import ccall "setAccountRegisterOnAdd" setAccountRegisterOnAdd
+    :: (Ptr AccountConfig)
+    -> CInt -- ^ pj_bool_t --> _zero_ = false, _non-zero_ = _true_
+    -> IO ()
+
+-- | Update registration or perform unregistration. If registration is
+-- configured for this account, then initial SIP REGISTER will be sent when the
+-- account is added with setAccount. Application normally only need to
+-- call this function if it wants to manually update the registration or to
+-- unregister from the server.
+--
+-- If given _false_ the unregistration will be performed.
+foreign import ccall "pjsua_acc_set_registration" setAccountRegistration
+    :: AccountId
+    -> CInt
+    -- ^ pj_bool_t --> _zero_ = false, _non-zero_ = _true_
+    -> IO PjStatus
+
+
 -- | Add a new account to hsua (pjsua). If registration is configured for this
 -- account, this function would also start the SIP registration session with
 -- the SIP registrar server. This SIP registration session will be maintained

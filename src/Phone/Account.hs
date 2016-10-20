@@ -14,25 +14,35 @@ module Phone.Account
     ( Account(..)
     , AccountId
     , AuthScheme(..)
+    , WhenRegister(..)
     , createAccount
     , isAccountRegistered
     , mkSimpleAccount
     , removeAccount
+    , registerAccount
+    , unregisterAccount
     )
   where
 
-import Control.Monad ((>>=), return)
 import Control.Applicative ((<*))
+import Control.Monad ((>>=), return)
 import Data.Bool (Bool)
 import Data.Eq ((/=))
-import Data.Function ((.))
+import Data.Function (($), (.))
 import Data.Monoid ((<>))
 import Data.Text (Text, unpack)
 import Foreign.C.String (newCString)
-import Foreign.Marshal.Alloc (malloc, free)
+import Foreign.Marshal.Alloc (free, malloc)
 import Foreign.Storable (peek)
 import System.IO (IO)
 
+import Phone.Exception
+    ( PhoneException
+        ( CreateAccount
+        , Registration
+        , Unregistration
+        )
+    )
 import Phone.Internal.FFI.Account
     ( AccountId
     , createAccountConfig
@@ -46,12 +56,15 @@ import Phone.Internal.FFI.Account
     , setAccountDataType
     , setAccountRealm
     , setAccountRegUri
+    , setAccountRegisterOnAdd
+    , setAccountRegistration
     , setAccountScheme
     , setAccountUsername
     , setAccoutId
     )
-import Phone.Internal.FFI.Common (pjTrue)
+import Phone.Internal.FFI.Common (pjFalse, pjTrue)
 import Phone.Internal.FFI.PjString (createPjString)
+import Phone.Internal.Utils (check)
 
 
 data AuthScheme = Digest | Basic
@@ -82,8 +95,10 @@ data Account = Account
     , password :: Text
     }
 
-createAccount :: Account -> IO AccountId
-createAccount Account{..} = do
+data WhenRegister = Now | Later
+
+createAccount :: WhenRegister -> Account -> IO AccountId
+createAccount whenReg Account{..} = do
     accCfg <- createAccountConfig
     defaultAccountConfig accCfg
     newCString' accountId >>= createPjString >>= setAccoutId accCfg
@@ -95,13 +110,27 @@ createAccount Account{..} = do
     newCString' userName >>= createPjString >>= setAccountUsername accCfg 0
     setAccountDataType accCfg 0 credDataPlainPasswd
     newCString' password >>= createPjString >>= setAccountData accCfg 0
+    setAccountRegisterOnAdd accCfg $ toVal whenReg
     accId <- malloc
-    _ <- setAccount accCfg pjTrue accId
+    setAccount accCfg pjTrue accId >>= check CreateAccount
     peek accId <* free accId <* free accCfg
   where
     newCString' = newCString . unpack
+
+    toVal Now = pjTrue
+    toVal Later = pjFalse
+
     schemeText Digest = "digest"
     schemeText Basic = "basic"
 
 isAccountRegistered :: AccountId -> IO Bool
 isAccountRegistered acc = isAccoutRegistred acc >>= (return . (/=) 0)
+
+registerAccount :: AccountId -> IO ()
+registerAccount accId =
+    setAccountRegistration accId pjTrue >>= check Registration
+
+unregisterAccount :: AccountId -> IO ()
+unregisterAccount accId =
+    setAccountRegistration accId pjFalse >>= check Unregistration
+

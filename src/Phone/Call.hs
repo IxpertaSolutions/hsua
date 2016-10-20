@@ -23,9 +23,7 @@ module Phone.Call
   where
 
 import Control.Applicative (pure)
-import Control.Exception.Base (Exception, throwIO)
 import Control.Monad ((>>=))
-import Data.Eq ((/=))
 import Data.Function (($))
 import Data.Int (Int)
 import Data.Text (Text, unpack)
@@ -66,8 +64,9 @@ import qualified Phone.Internal.FFI.CallManipulation as FFI
     , hangupCall
     , makeCall
     )
-import Phone.Internal.FFI.Common (CallId, PjStatus, pjSuccess)
+import Phone.Internal.FFI.Common (CallId)
 import Phone.Internal.FFI.PjString (createPjString)
+import Phone.Internal.Utils (check)
 
 
 data CallInfo = CallInfo
@@ -112,8 +111,3 @@ makeCall accId url = do
     -- TODO: There is batter way to handle allocation and deallocation
     free callId
     pure res
-
-check :: Exception e => e -> PjStatus -> IO ()
-check e ret = if ret /= pjSuccess
-    then throwIO e
-    else pure ()

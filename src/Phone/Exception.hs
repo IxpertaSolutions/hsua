@@ -27,4 +27,7 @@ data PhoneException =
     | Start
     | Transport
     | GetCallInfo
+    | Registration
+    | Unregistration
+    | CreateAccount
   deriving (Typeable, Show, Exception)
