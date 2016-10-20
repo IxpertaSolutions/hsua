@@ -21,13 +21,14 @@ module Phone.Account
   where
 
 import Control.Monad ((>>=), return)
+import Control.Applicative ((<*))
 import Data.Bool (Bool)
 import Data.Eq ((/=))
 import Data.Function ((.))
 import Data.Monoid ((<>))
 import Data.Text (Text, unpack)
 import Foreign.C.String (newCString)
-import Foreign.Marshal.Alloc (malloc)
+import Foreign.Marshal.Alloc (malloc, free)
 import Foreign.Storable (peek)
 import System.IO (IO)
 
@@ -94,7 +95,7 @@ createAccount Account{..} = do
     newCString' password >>= createPjString >>= setAccountData accCfg 0
     accId <- malloc
     _ <- setAccount accCfg pjTrue accId
-    peek accId
+    peek accId <* free accId <* free accCfg
   where
     newCString' = newCString . unpack
     schemeText Digest = "digest"
