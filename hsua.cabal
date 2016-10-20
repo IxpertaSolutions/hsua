@@ -44,6 +44,7 @@ library
     Phone.Internal.FFI.Media
     Phone.Internal.FFI.PjString
     Phone.Internal.FFI.Transport
+    Phone.Internal.Utils
   c-sources:
     cbits/pj_string.c
     cbits/pjsua_account.c
