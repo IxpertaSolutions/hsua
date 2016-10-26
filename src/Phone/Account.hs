@@ -35,6 +35,7 @@ import Foreign.C.String (newCString)
 import Foreign.Marshal.Alloc (free, malloc)
 import Foreign.Storable (peek)
 import System.IO (IO)
+import Text.Show (Show)
 
 import Phone.Exception
     ( PhoneException
@@ -68,6 +69,22 @@ import Phone.Internal.Utils (check)
 
 
 data AuthScheme = Digest | Basic
+  deriving (Show)
+
+data Account = Account
+    { accountId :: Text
+    -- ^ The full SIP URL for the account. The value can take name address or
+    -- URL format, and will look something like "sip:account@serviceprovider"
+    -- or "\"Display Name" <sip:account>"
+    , registrationUri :: Text
+    , realm :: Text
+    , authScheme :: AuthScheme
+    , userName :: Text
+    , password :: Text
+    }
+  deriving (Show)
+
+data WhenRegister = Now | Later
 
 mkSimpleAccount
     :: Text -- ^ Sip server domain name or IP
@@ -82,20 +99,6 @@ mkSimpleAccount server user password = Account
     , userName = user
     , password = password
     }
-
-data Account = Account
-    { accountId :: Text
-    -- ^ The full SIP URL for the account. The value can take name address or
-    -- URL format, and will look something like "sip:account@serviceprovider"
-    -- or "\"Display Name" <sip:account>"
-    , registrationUri :: Text
-    , realm :: Text
-    , authScheme :: AuthScheme
-    , userName :: Text
-    , password :: Text
-    }
-
-data WhenRegister = Now | Later
 
 createAccount :: WhenRegister -> Account -> IO AccountId
 createAccount whenReg Account{..} = do

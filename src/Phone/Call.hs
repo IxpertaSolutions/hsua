@@ -33,6 +33,7 @@ import Foreign.Ptr (nullPtr)
 import Foreign.Storable (peek)
 import Prelude (fromIntegral)
 import System.IO (IO)
+import Text.Show (Show)
 
 import Phone.Exception
     ( PhoneException
@@ -73,6 +74,7 @@ data CallInfo = CallInfo
     { accountId :: AccountId
     , callState :: FFI.CallState
     }
+  deriving (Show)
 
 getCallInfo :: CallId -> IO CallInfo
 getCallInfo callId = do
