@@ -56,7 +56,7 @@ library
     cbits/pjsua_transport.c
 
   build-depends:
-    base >=4.8 && <4.9
+    base >=4.8 && <5
     , text
 
   ghc-options:
@@ -91,7 +91,7 @@ executable test
     Phone.Internal.FFI.Transport
     Phone.Internal.Utils
   build-depends:
-    base >=4.8 && <4.9
+    base >=4.8 && <5
     , hsua
   ghc-options:
     -Wall
@@ -109,7 +109,7 @@ executable example
     , RecordWildCards
   -- other-modules:
   build-depends:
-    base >=4.8 && <4.9
+    base >=4.8 && <5
     , hsua
   ghc-options:
     -Wall
