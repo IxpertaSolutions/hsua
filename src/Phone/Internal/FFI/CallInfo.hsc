@@ -54,8 +54,8 @@ foreign import ccall "getAccountId" getAccountId
     :: Ptr CallInfo
     -> IO AccountId
 
-data CallState =
-    Null -- ^ Before INVITE is sent or received
+data CallState
+    = Null -- ^ Before INVITE is sent or received
     | Calling -- ^ After INVITE is sent
     | Incoming -- ^ After INVITE is received.
     | EarlyMedia -- ^ After response with To tag.
@@ -89,4 +89,3 @@ getCallState callInfo = (toEnum . fromIntegral) <$> c_getCallState callInfo
 foreign import ccall "getCallState" c_getCallState
     :: Ptr CallInfo
     -> IO CInt
-

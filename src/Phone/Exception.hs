@@ -18,11 +18,11 @@ import Control.Exception.Base (Exception)
 import Data.Typeable (Typeable)
 import Text.Show (Show)
 
-data PhoneException =
-    AnswerCall
+data PhoneException
+    = AnswerCall
     | CreateLib
     | HangupCall
-    | Initializeation
+    | Initialization
     | MakeCall
     | Start
     | Transport

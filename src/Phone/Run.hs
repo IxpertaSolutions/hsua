@@ -29,7 +29,7 @@ import System.IO (IO)
 import Phone.Exception
     ( PhoneException
         ( CreateLib
-        , Initializeation
+        , Initialization
         , Start
         , Transport
         )
@@ -98,7 +98,7 @@ withPhone Handlers{..} op = bracket_ initSeq deinitSeq op
         logCfg <- createLoggingConfig
         defaultLoggingConfig logCfg
         setConsoleLevel logCfg 0
-        initializePjSua pjCfg logCfg mediaCfg >>= check Initializeation
+        initializePjSua pjCfg logCfg mediaCfg >>= check Initialization
         transportCfg <- createTransportConfig
         createTransport udpTransport transportCfg nullPtr >>= check Transport
         pjsuaStart >>= check Start
