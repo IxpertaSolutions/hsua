@@ -50,7 +50,7 @@ foreign import ccall "pjsua_call_get_info" getCallInfo
     -> Ptr CallInfo
     -> IO PjStatus
 
-foreign import ccall "getAccountId" getAccountId
+foreign import ccall "get_account_id" getAccountId
     :: Ptr CallInfo
     -> IO AccountId
 
@@ -86,6 +86,6 @@ instance Enum CallState where
 getCallState :: Ptr CallInfo -> IO CallState
 getCallState callInfo = (toEnum . fromIntegral) <$> c_getCallState callInfo
 
-foreign import ccall "getCallState" c_getCallState
+foreign import ccall "get_call_state" c_getCallState
     :: Ptr CallInfo
     -> IO CInt
