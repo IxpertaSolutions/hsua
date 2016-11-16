@@ -25,10 +25,11 @@ module Phone.Account
   where
 
 import Control.Applicative ((<*))
-import Control.Monad ((>>=), return)
+import Control.Monad ((>>=))
 import Data.Bool (Bool)
 import Data.Eq ((/=))
 import Data.Function (($), (.))
+import Data.Functor (fmap)
 import Data.Monoid ((<>))
 import Data.Text (Text, unpack)
 import Foreign.C.String (newCString)
@@ -127,7 +128,7 @@ createAccount whenReg Account{..} = do
     schemeText Basic = "basic"
 
 isAccountRegistered :: AccountId -> IO Bool
-isAccountRegistered acc = FFI.isAccountRegistered acc >>= (return . (/=) 0)
+isAccountRegistered = fmap (0/=) . FFI.isAccountRegistered
 
 registerAccount :: AccountId -> IO ()
 registerAccount accId =

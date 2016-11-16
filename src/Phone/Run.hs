@@ -75,7 +75,7 @@ import Phone.Internal.FFI.Transport
     )
 
 withPhone :: Handlers -> IO () -> IO ()
-withPhone Handlers{..} op = bracket_ initSeq deinitSeq op
+withPhone Handlers{..} = bracket_ initSeq deinitSeq
   where
     initSeq = do
         createPjSua >>= check CreateLib
@@ -115,4 +115,4 @@ withPhone Handlers{..} op = bracket_ initSeq deinitSeq op
         then throwIO e
         else pure ()
 
-    maybeHandler m op' = maybe (pure ()) op' m
+    maybeHandler m op = maybe (pure ()) op m
