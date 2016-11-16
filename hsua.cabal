@@ -64,7 +64,6 @@ library
     -fwarn-tabs
     -fwarn-missing-import-lists
     -fwarn-implicit-prelude
-    -threaded
     -rtsopts=all
 
   if flag(pedantic)
