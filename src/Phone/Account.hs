@@ -49,7 +49,6 @@ import Phone.Internal.FFI.Account
     , createAccountConfig
     , credDataPlainPasswd
     , defaultAccountConfig
-    , isAccoutRegistred
     , removeAccount
     , setAccount
     , setAccountCredCount
@@ -63,6 +62,7 @@ import Phone.Internal.FFI.Account
     , setAccountUsername
     , setAccoutId
     )
+import qualified Phone.Internal.FFI.Account as FFI (isAccountRegistered)
 import Phone.Internal.FFI.Common (pjFalse, pjTrue)
 import Phone.Internal.FFI.PjString (createPjString)
 import Phone.Internal.Utils (check)
@@ -127,7 +127,7 @@ createAccount whenReg Account{..} = do
     schemeText Basic = "basic"
 
 isAccountRegistered :: AccountId -> IO Bool
-isAccountRegistered acc = isAccoutRegistred acc >>= (return . (/=) 0)
+isAccountRegistered acc = FFI.isAccountRegistered acc >>= (return . (/=) 0)
 
 registerAccount :: AccountId -> IO ()
 registerAccount accId =

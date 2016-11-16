@@ -105,7 +105,7 @@ foreign import ccall "pjsua_acc_add" setAccount
 --
 -- * 0 - unregistred
 -- * non-zero - registred
-foreign import ccall "is_accout_registred" isAccoutRegistred
+foreign import ccall "is_account_registered" isAccountRegistered
     :: AccountId
     -> IO CInt
 

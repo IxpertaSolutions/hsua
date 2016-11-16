@@ -25,7 +25,7 @@ import Phone.Internal.FFI.Account
     ( createAccountConfig
     , credDataPlainPasswd
     , defaultAccountConfig
-    , isAccoutRegistred
+    , isAccountRegistered
     , setAccount
     , setAccountCredCount
     , setAccountData
@@ -67,7 +67,7 @@ incomingCallHandler _ callId _ = do
 onRegistrationHandler :: OnRegistrationStateHandler
 onRegistrationHandler id = do
     putStrLn "#####################################################"
-    r <- isAccoutRegistred id
+    r <- isAccountRegistered id
     putStrLn $ "is account registred: " <> show r
     putStrLn "#####################################################"
 

@@ -51,7 +51,7 @@ void setAccountRegisterOnAdd(pjsua_acc_config *account, pj_bool_t val)
     account->register_on_acc_add = val;
 }
 
-int is_accout_registred(pjsua_acc_id id)
+int is_account_registered(pjsua_acc_id id)
 {
     pjsua_acc_info info;
     pjsua_acc_get_info(id, &info);
