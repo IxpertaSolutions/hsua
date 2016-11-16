@@ -18,7 +18,7 @@ module Phone.Account
     , createAccount
     , isAccountRegistered
     , mkSimpleAccount
-    , removeAccount
+    , FFI.removeAccount
     , registerAccount
     , unregisterAccount
     )
@@ -45,11 +45,12 @@ import Phone.Exception
         , Unregistration
         )
     )
-import Phone.Internal.FFI.Account
-    ( AccountId
-    , createAccountConfig
+import Phone.Internal.FFI.Account (AccountId)
+import qualified Phone.Internal.FFI.Account as FFI
+    ( createAccountConfig
     , credDataPlainPasswd
     , defaultAccountConfig
+    , isAccountRegistered
     , removeAccount
     , setAccount
     , setAccountCredCount
@@ -63,7 +64,6 @@ import Phone.Internal.FFI.Account
     , setAccountUsername
     , setAccoutId
     )
-import qualified Phone.Internal.FFI.Account as FFI (isAccountRegistered)
 import Phone.Internal.FFI.Common (pjFalse, pjTrue)
 import Phone.Internal.FFI.PjString (createPjString)
 import Phone.Internal.Utils (check)
@@ -103,20 +103,21 @@ mkSimpleAccount server user password = Account
 
 createAccount :: WhenRegister -> Account -> IO AccountId
 createAccount whenReg Account{..} = do
-    accCfg <- createAccountConfig
-    defaultAccountConfig accCfg
-    newCString' accountId >>= createPjString >>= setAccoutId accCfg
-    newCString' registrationUri >>= createPjString >>= setAccountRegUri accCfg
-    setAccountCredCount accCfg 1
-    newCString' realm >>= createPjString >>= setAccountRealm accCfg 0
+    accCfg <- FFI.createAccountConfig
+    FFI.defaultAccountConfig accCfg
+    newCString' accountId >>= createPjString >>= FFI.setAccoutId accCfg
+    newCString' registrationUri >>= createPjString
+        >>= FFI.setAccountRegUri accCfg
+    FFI.setAccountCredCount accCfg 1
+    newCString' realm >>= createPjString >>= FFI.setAccountRealm accCfg 0
     newCString' (schemeText authScheme) >>= createPjString
-        >>= setAccountScheme accCfg 0
-    newCString' userName >>= createPjString >>= setAccountUsername accCfg 0
-    setAccountDataType accCfg 0 credDataPlainPasswd
-    newCString' password >>= createPjString >>= setAccountData accCfg 0
-    setAccountRegisterOnAdd accCfg $ toVal whenReg
+        >>= FFI.setAccountScheme accCfg 0
+    newCString' userName >>= createPjString >>= FFI.setAccountUsername accCfg 0
+    FFI.setAccountDataType accCfg 0 FFI.credDataPlainPasswd
+    newCString' password >>= createPjString >>= FFI.setAccountData accCfg 0
+    FFI.setAccountRegisterOnAdd accCfg $ toVal whenReg
     accId <- malloc
-    setAccount accCfg pjTrue accId >>= check CreateAccount
+    FFI.setAccount accCfg pjTrue accId >>= check CreateAccount
     peek accId <* free accId <* free accCfg
   where
     newCString' = newCString . unpack
@@ -132,9 +133,9 @@ isAccountRegistered = fmap (0/=) . FFI.isAccountRegistered
 
 registerAccount :: AccountId -> IO ()
 registerAccount accId =
-    setAccountRegistration accId pjTrue >>= check Registration
+    FFI.setAccountRegistration accId pjTrue >>= check Registration
 
 unregisterAccount :: AccountId -> IO ()
 unregisterAccount accId =
-    setAccountRegistration accId pjFalse >>= check Unregistration
+    FFI.setAccountRegistration accId pjFalse >>= check Unregistration
 
