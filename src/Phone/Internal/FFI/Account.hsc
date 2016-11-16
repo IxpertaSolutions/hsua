@@ -32,37 +32,37 @@ foreign import ccall "crete_pjsua_acc_config" createAccountConfig
     :: IO (Ptr AccountConfig)
 
 foreign import ccall "pjsua_acc_config_default" defaultAccountConfig
-    :: (Ptr AccountConfig) -> IO ()
+    :: Ptr AccountConfig -> IO ()
 
 foreign import ccall "set_account_id" setAccoutId
-    :: (Ptr AccountConfig) -> Ptr PjString -> IO ()
+    :: Ptr AccountConfig -> Ptr PjString -> IO ()
 
 foreign import ccall "set_account_reg_uri" setAccountRegUri
-    :: (Ptr AccountConfig) -> Ptr PjString -> IO ()
+    :: Ptr AccountConfig -> Ptr PjString -> IO ()
 
 foreign import ccall "set_account_cred_count" setAccountCredCount
-    :: (Ptr AccountConfig) -> CInt -> IO ()
+    :: Ptr AccountConfig -> CInt -> IO ()
 
 foreign import ccall "set_account_realm" setAccountRealm
-    :: (Ptr AccountConfig) -> CInt -> Ptr PjString -> IO ()
+    :: Ptr AccountConfig -> CInt -> Ptr PjString -> IO ()
 
 foreign import ccall "set_account_scheme" setAccountScheme
-    :: (Ptr AccountConfig) -> CInt -> Ptr PjString -> IO ()
+    :: Ptr AccountConfig -> CInt -> Ptr PjString -> IO ()
 
 foreign import ccall "set_account_username" setAccountUsername
-    :: (Ptr AccountConfig) -> CInt -> Ptr PjString -> IO ()
+    :: Ptr AccountConfig -> CInt -> Ptr PjString -> IO ()
 
 credDataPlainPasswd :: CInt
 credDataPlainPasswd = #{enumToValue PJSIP_CRED_DATA_PLAIN_PASSWD}
 
 foreign import ccall "set_account_data_type" setAccountDataType
-    :: (Ptr AccountConfig) -> CInt -> CInt -> IO ()
+    :: Ptr AccountConfig -> CInt -> CInt -> IO ()
 
 foreign import ccall "set_account_data" setAccountData
-    :: (Ptr AccountConfig) -> CInt -> Ptr PjString -> IO ()
+    :: Ptr AccountConfig -> CInt -> Ptr PjString -> IO ()
 
 foreign import ccall "set_account_register_on_add" setAccountRegisterOnAdd
-    :: (Ptr AccountConfig)
+    :: Ptr AccountConfig
     -> CInt -- ^ pj_bool_t --> _zero_ = false, _non-zero_ = _true_
     -> IO ()
 

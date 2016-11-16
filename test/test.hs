@@ -4,14 +4,15 @@ module Main where
 
 import Control.Concurrent (threadDelay)
 import Control.Monad ((>>=))
-import Data.Function (($), (.))
+import Data.Function (($))
 import Data.Monoid ((<>))
 import Foreign.C.String (newCString)
 import Foreign.C.Types (CInt)
 import Foreign.Marshal.Alloc (malloc)
 import Foreign.Ptr (nullPtr)
 import Foreign.Storable (peek)
-import System.IO (BufferMode (NoBuffering), IO, hSetBuffering, putStrLn, stdout)
+import System.IO
+    (BufferMode(NoBuffering), IO, hSetBuffering, print, putStrLn, stdout)
 import Text.Show (show)
 
 import Phone.Internal.FFI
@@ -78,7 +79,7 @@ onMediaState _ =
 main :: IO ()
 main = do
     hSetBuffering stdout NoBuffering
-    createPjSua >>= (putStrLn . show)
+    createPjSua >>= print
     str <- newCString "asdflfs" >>= createPjString
     deletePjString str
     putStrLn $ "pjTrue: " <> show pjTrue
@@ -97,7 +98,7 @@ main = do
     -- Initialize transport
     transportCfg <- createTransportConfig
     -- setPort transportCfg 5060
-    createTransport udpTransport transportCfg nullPtr >>= (putStrLn . show)
+    createTransport udpTransport transportCfg nullPtr >>= print
     _ <- pjsuaStart
     putStrLn "****************************************"
     printDevices
@@ -122,8 +123,8 @@ main = do
     threadDelay 1000000
     id' <- peek accountId
     dst <- newCString "sip:420242492306@10.120.51.51" >>= createPjString
-    makeCall id' dst nullPtr nullPtr nullPtr nullPtr >>= (putStrLn . show)
+    makeCall id' dst nullPtr nullPtr nullPtr nullPtr >>= print
 
     threadDelay 10000000
     hangupAll
-    destroyPjSua >>= (putStrLn . show)
+    destroyPjSua >>= print
