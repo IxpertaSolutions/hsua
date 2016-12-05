@@ -97,7 +97,6 @@ withPhone Handlers{..} = bracket_ initSeq deinitSeq
         defaultMedaiConfig mediaCfg
         logCfg <- createLoggingConfig
         defaultLoggingConfig logCfg
-        setConsoleLevel logCfg 0
         initializePjSua pjCfg logCfg mediaCfg >>= check Initialization
         transportCfg <- createTransportConfig
         createTransport udpTransport transportCfg nullPtr >>= check Transport
