@@ -19,7 +19,9 @@ import Data.Function ((.))
 import Data.Functor ((<$>))
 import Data.Monoid ((<>))
 import Foreign.C.Types (CInt(CInt))
+import Foreign.Marshal.Alloc (mallocBytes)
 import Foreign.Ptr (Ptr)
+import Foreign.Storable (peekByteOff)
 import Prelude (Enum, toEnum, fromEnum, fromIntegral, error)
 import System.IO (IO)
 import Text.Show (Show, show)
@@ -33,17 +35,16 @@ import Phone.Internal.FFI.Common
 
 data CallInfo
 
-foreign import ccall "create_pjsua_call_info" createCallInfo
-    :: IO (Ptr CallInfo)
+createCallInfo :: IO (Ptr CallInfo)
+createCallInfo = mallocBytes #{size pjsua_call_info}
 
 foreign import ccall "pjsua_call_get_info" getCallInfo
     :: CallId
     -> Ptr CallInfo
     -> IO PjStatus
 
-foreign import ccall "get_account_id" getAccountId
-    :: Ptr CallInfo
-    -> IO AccountId
+getAccountId :: Ptr CallInfo -> IO AccountId
+getAccountId = #{peek pjsua_call_info, acc_id}
 
 data CallState
     = Null -- ^ Before INVITE is sent or received
@@ -77,6 +78,5 @@ instance Enum CallState where
 getCallState :: Ptr CallInfo -> IO CallState
 getCallState callInfo = (toEnum . fromIntegral) <$> c_getCallState callInfo
 
-foreign import ccall "get_call_state" c_getCallState
-    :: Ptr CallInfo
-    -> IO CInt
+c_getCallState :: Ptr CallInfo -> IO CInt
+c_getCallState = #{peek pjsua_call_info, state}
