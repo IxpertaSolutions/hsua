@@ -64,7 +64,6 @@ library
     -fwarn-tabs
     -fwarn-missing-import-lists
     -fwarn-implicit-prelude
-    -rtsopts=all
 
   if flag(pedantic)
     ghc-options:        -Werror
