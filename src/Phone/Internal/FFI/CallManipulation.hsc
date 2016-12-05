@@ -12,15 +12,6 @@
 module Phone.Internal.FFI.CallManipulation
   where
 
--- GHC lower than 8.0 don't have alignment macro.
-#if __GLASGOW_HASKELL__ < 800
-#let alignment t = "%lu", (unsigned long)offsetof(struct {char x__; t (y__); }, y__)
-#endif
-
--- This allows to retrieve value from enums and defines
--- Pjsua uses extremely tricky enums...
-#let enumToValue t = "%d", (int)t
-
 #include <pjsua-lib/pjsua.h>
 
 import Foreign.C.Types (CInt(CInt), CUInt(CUInt))

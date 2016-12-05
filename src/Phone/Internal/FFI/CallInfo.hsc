@@ -12,15 +12,6 @@
 module Phone.Internal.FFI.CallInfo
   where
 
--- GHC lower than 8.0 don't have alignment macro.
-#if __GLASGOW_HASKELL__ < 800
-#let alignment t = "%lu", (unsigned long)offsetof(struct {char x__; t (y__); }, y__)
-#endif
-
--- This allows to retrieve value from enums and defines
--- Pjsua uses extremely tricky enums...
-#let enumToValue t = "%d", (int)t
-
 #include <pjsua-lib/pjsua.h>
 
 import Data.Eq (Eq)
@@ -65,21 +56,21 @@ data CallState
   deriving (Eq,Show)
 
 instance Enum CallState where
-    fromEnum Null = #{enumToValue PJSIP_INV_STATE_NULL}
-    fromEnum Calling = #{enumToValue PJSIP_INV_STATE_CALLING}
-    fromEnum Incoming = #{enumToValue PJSIP_INV_STATE_INCOMING}
-    fromEnum EarlyMedia = #{enumToValue PJSIP_INV_STATE_EARLY}
-    fromEnum Connecting = #{enumToValue PJSIP_INV_STATE_CONNECTING}
-    fromEnum Confirmed = #{enumToValue PJSIP_INV_STATE_CONFIRMED}
-    fromEnum Disconnected = #{enumToValue PJSIP_INV_STATE_DISCONNECTED}
+    fromEnum Null = #{const PJSIP_INV_STATE_NULL}
+    fromEnum Calling = #{const PJSIP_INV_STATE_CALLING}
+    fromEnum Incoming = #{const PJSIP_INV_STATE_INCOMING}
+    fromEnum EarlyMedia = #{const PJSIP_INV_STATE_EARLY}
+    fromEnum Connecting = #{const PJSIP_INV_STATE_CONNECTING}
+    fromEnum Confirmed = #{const PJSIP_INV_STATE_CONFIRMED}
+    fromEnum Disconnected = #{const PJSIP_INV_STATE_DISCONNECTED}
 
-    toEnum #{enumToValue PJSIP_INV_STATE_NULL} = Null
-    toEnum #{enumToValue PJSIP_INV_STATE_CALLING} = Calling
-    toEnum #{enumToValue PJSIP_INV_STATE_INCOMING} = Incoming
-    toEnum #{enumToValue PJSIP_INV_STATE_EARLY} = EarlyMedia
-    toEnum #{enumToValue PJSIP_INV_STATE_CONNECTING} = Connecting
-    toEnum #{enumToValue PJSIP_INV_STATE_CONFIRMED} = Confirmed
-    toEnum #{enumToValue PJSIP_INV_STATE_DISCONNECTED} = Disconnected
+    toEnum #{const PJSIP_INV_STATE_NULL} = Null
+    toEnum #{const PJSIP_INV_STATE_CALLING} = Calling
+    toEnum #{const PJSIP_INV_STATE_INCOMING} = Incoming
+    toEnum #{const PJSIP_INV_STATE_EARLY} = EarlyMedia
+    toEnum #{const PJSIP_INV_STATE_CONNECTING} = Connecting
+    toEnum #{const PJSIP_INV_STATE_CONFIRMED} = Confirmed
+    toEnum #{const PJSIP_INV_STATE_DISCONNECTED} = Disconnected
     toEnum unmatched =
         error ("CallState toEnum error with: " <> show unmatched)
 

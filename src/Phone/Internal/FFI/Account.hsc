@@ -12,10 +12,6 @@
 module Phone.Internal.FFI.Account
   where
 
--- This allows to retrieve value from enums and defines
--- Pjsua uses extremely tricky enums...
-#let enumToValue t = "%d", (int)t
-
 #include <pjsua-lib/pjsua.h>
 
 import Foreign.C.Types (CInt(CInt))
@@ -53,7 +49,7 @@ foreign import ccall "set_account_username" setAccountUsername
     :: Ptr AccountConfig -> CInt -> Ptr PjString -> IO ()
 
 credDataPlainPasswd :: CInt
-credDataPlainPasswd = #{enumToValue PJSIP_CRED_DATA_PLAIN_PASSWD}
+credDataPlainPasswd = #{const PJSIP_CRED_DATA_PLAIN_PASSWD}
 
 foreign import ccall "set_account_data_type" setAccountDataType
     :: Ptr AccountConfig -> CInt -> CInt -> IO ()

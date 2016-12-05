@@ -19,10 +19,6 @@ import System.IO (IO)
 
 import Phone.Internal.FFI.Common (PjStatus)
 
--- This allows to retrieve value from enums and defines
--- Pjsua uses extremely tricky enums...
-#let enumToValue t = "%d", (int)t
-
 #include <pjsua-lib/pjsua.h>
 
 data TransportConfig
@@ -35,10 +31,10 @@ foreign import ccall "pjsua_transport_config_set_port" setPort
     :: Ptr TransportConfig -> CUInt -> IO ()
 
 udpTransport :: CInt
-udpTransport = #{enumToValue PJSIP_TRANSPORT_UDP}
+udpTransport = #{const PJSIP_TRANSPORT_UDP}
 
 tcpTransport :: CInt
-tcpTransport = #{enumToValue PJSIP_TRANSPORT_TCP}
+tcpTransport = #{const PJSIP_TRANSPORT_TCP}
 
 foreign import ccall "pjsua_transport_create" createTransport
     :: CInt -> Ptr TransportConfig -> Ptr TransportId -> IO PjStatus

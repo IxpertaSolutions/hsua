@@ -13,10 +13,6 @@ module Phone.Internal.FFI.Common
 
 import Foreign.C.Types (CInt)
 
--- This allows to retrieve value from enums and defines
--- Pjsua uses extremely tricky enums...
-#let enumToValue t = "%d", (int)t
-
 #include <pjsua-lib/pjsua.h>
 
 data CallSetting
@@ -31,14 +27,14 @@ type PjStatus = CInt
 
 -- | Equivalent to PJ_TRUE
 pjTrue :: CInt
-pjTrue = #{enumToValue PJ_TRUE}
+pjTrue = #{const PJ_TRUE}
 
 -- | Equivalent to PJ_FALSE
 pjFalse :: CInt
-pjFalse = #{enumToValue PJ_FALSE}
+pjFalse = #{const PJ_FALSE}
 
 -- | Equivalent to PJ_SUCCESS
 pjSuccess :: CInt
-pjSuccess = #{enumToValue PJ_SUCCESS}
+pjSuccess = #{const PJ_SUCCESS}
 
 data RxData
