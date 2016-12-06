@@ -10,13 +10,17 @@
 -- Stability:    experimental
 -- Portability:  GHC specific language extensions.
 module Phone.Internal.FFI.PjString
+    ( createPjString
+    , deletePjString
+    , setPjString
+    )
   where
 
 #include <pjsua-lib/pjsua.h>
 
 import Foreign.C.String (CString)
+import Foreign.Marshal.Utils (copyBytes)
 import Foreign.Ptr (Ptr)
-
 import System.IO (IO)
 
 import Phone.Internal.FFI.Common (PjString)
@@ -26,3 +30,5 @@ foreign import ccall "create_pj_str" createPjString
 foreign import ccall "delete_pj_str" deletePjString
     :: Ptr PjString -> IO ()
 
+setPjString :: Ptr PjString -> Ptr PjString -> IO ()
+setPjString dst src = copyBytes dst src #{size pj_str_t}

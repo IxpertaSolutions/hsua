@@ -16,7 +16,7 @@ module Phone.Account
     , AuthScheme(..)
     , WhenRegister(..)
     , createAccount
-    , isAccountRegistered
+    , FFI.isAccountRegistered
     , mkSimpleAccount
     , FFI.removeAccount
     , registerAccount
@@ -24,16 +24,12 @@ module Phone.Account
     )
   where
 
-import Control.Applicative ((<*))
 import Control.Monad ((>>=))
-import Data.Bool (Bool)
-import Data.Eq ((/=))
 import Data.Function (($), (.))
-import Data.Functor (fmap)
 import Data.Monoid ((<>))
 import Data.Text (Text, unpack)
 import Foreign.C.String (newCString)
-import Foreign.Marshal.Alloc (free, malloc)
+import Foreign.Marshal.Alloc (alloca)
 import Foreign.Storable (peek)
 import System.IO (IO)
 import Text.Show (Show)
@@ -47,22 +43,21 @@ import Phone.Exception
     )
 import Phone.Internal.FFI.Account (AccountId)
 import qualified Phone.Internal.FFI.Account as FFI
-    ( createAccountConfig
-    , credDataPlainPasswd
-    , defaultAccountConfig
+    ( credDataPlainPasswd
     , isAccountRegistered
     , removeAccount
     , setAccount
     , setAccountCredCount
     , setAccountData
     , setAccountDataType
+    , setAccountId
     , setAccountRealm
     , setAccountRegUri
     , setAccountRegisterOnAdd
     , setAccountRegistration
     , setAccountScheme
     , setAccountUsername
-    , setAccoutId
+    , withAccountConfig
     )
 import Phone.Internal.FFI.Common (pjFalse, pjTrue)
 import Phone.Internal.FFI.PjString (createPjString)
@@ -102,10 +97,8 @@ mkSimpleAccount server user password = Account
     }
 
 createAccount :: WhenRegister -> Account -> IO AccountId
-createAccount whenReg Account{..} = do
-    accCfg <- FFI.createAccountConfig
-    FFI.defaultAccountConfig accCfg
-    newCString' accountId >>= createPjString >>= FFI.setAccoutId accCfg
+createAccount whenReg Account{..} = FFI.withAccountConfig $ \accCfg -> do
+    newCString' accountId >>= createPjString >>= FFI.setAccountId accCfg
     newCString' registrationUri >>= createPjString
         >>= FFI.setAccountRegUri accCfg
     FFI.setAccountCredCount accCfg 1
@@ -116,9 +109,9 @@ createAccount whenReg Account{..} = do
     FFI.setAccountDataType accCfg 0 FFI.credDataPlainPasswd
     newCString' password >>= createPjString >>= FFI.setAccountData accCfg 0
     FFI.setAccountRegisterOnAdd accCfg $ toVal whenReg
-    accId <- malloc
-    FFI.setAccount accCfg pjTrue accId >>= check CreateAccount
-    peek accId <* free accId <* free accCfg
+    alloca $ \accId -> do
+        FFI.setAccount accCfg pjTrue accId >>= check CreateAccount
+        peek accId
   where
     newCString' = newCString . unpack
 
@@ -127,9 +120,6 @@ createAccount whenReg Account{..} = do
 
     schemeText Digest = "digest"
     schemeText Basic = "basic"
-
-isAccountRegistered :: AccountId -> IO Bool
-isAccountRegistered = fmap (0/=) . FFI.isAccountRegistered
 
 registerAccount :: AccountId -> IO ()
 registerAccount accId =
