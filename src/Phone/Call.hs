@@ -20,13 +20,14 @@ module Phone.Call
     )
   where
 
-import Control.Applicative (pure)
+import Control.Applicative (Applicative((<*>)))
 import Control.Monad ((>>=))
 import Data.Function (($))
+import Data.Functor ((<$>))
 import Data.Int (Int)
 import Data.Text (Text, unpack)
 import Foreign.C.String (newCString)
-import Foreign.Marshal.Alloc (free, malloc)
+import Foreign.Marshal.Alloc (alloca)
 import Foreign.Ptr (nullPtr)
 import Foreign.Storable (peek)
 import Prelude (fromIntegral)
@@ -52,10 +53,10 @@ import qualified Phone.Internal.FFI.CallInfo as FFI
         , Incoming
         , Null
         )
-    , createCallInfo
     , getAccountId
     , getCallInfo
     , getCallState
+    , withCallInfo
     )
 import qualified Phone.Internal.FFI.CallManipulation as FFI
     ( answerCall
@@ -75,14 +76,9 @@ data CallInfo = CallInfo
   deriving (Show)
 
 getCallInfo :: CallId -> IO CallInfo
-getCallInfo callId = do
-    -- TODO: There is batter way to handle allocation and deallocation
-    info <- FFI.createCallInfo
+getCallInfo callId = FFI.withCallInfo $ \info -> do
     FFI.getCallInfo callId info >>= check GetCallInfo
-    accId <- FFI.getAccountId info
-    state <- FFI.getCallState info
-    free info
-    pure $ CallInfo accId state
+    CallInfo <$> FFI.getAccountId info <*> FFI.getCallState info
 
 answerCall
     :: CallId
@@ -105,9 +101,6 @@ hangupCall callId status =
 makeCall :: AccountId -> Text -> IO CallId
 makeCall accId url = do
     dst <- newCString (unpack url) >>= createPjString
-    callId <- malloc
-    FFI.makeCall accId dst nullPtr nullPtr nullPtr callId >>= check MakeCall
-    res <- peek callId
-    -- TODO: There is batter way to handle allocation and deallocation
-    free callId
-    pure res
+    alloca $ \callId -> do
+        FFI.makeCall accId dst nullPtr nullPtr nullPtr callId >>= check MakeCall
+        peek callId

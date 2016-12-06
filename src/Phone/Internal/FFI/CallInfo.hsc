@@ -10,6 +10,12 @@
 -- Stability:    experimental
 -- Portability:  GHC specific language extensions.
 module Phone.Internal.FFI.CallInfo
+    ( CallState(..)
+    , getAccountId
+    , getCallInfo
+    , getCallState
+    , withCallInfo
+    )
   where
 
 #include <pjsua-lib/pjsua.h>
@@ -19,7 +25,7 @@ import Data.Function ((.))
 import Data.Functor ((<$>))
 import Data.Monoid ((<>))
 import Foreign.C.Types (CInt(CInt))
-import Foreign.Marshal.Alloc (mallocBytes)
+import Foreign.Marshal.Alloc (allocaBytes)
 import Foreign.Ptr (Ptr)
 import Foreign.Storable (peekByteOff)
 import Prelude (Enum, toEnum, fromEnum, fromIntegral, error)
@@ -35,8 +41,8 @@ import Phone.Internal.FFI.Common
 
 data CallInfo
 
-createCallInfo :: IO (Ptr CallInfo)
-createCallInfo = mallocBytes #{size pjsua_call_info}
+withCallInfo :: (Ptr CallInfo -> IO a) -> IO a
+withCallInfo = allocaBytes #{size pjsua_call_info}
 
 foreign import ccall "pjsua_call_get_info" getCallInfo
     :: CallId
