@@ -65,7 +65,7 @@ import Phone.Internal.FFI.Configuration
 import Phone.Internal.FFI.Logging
     ( createLoggingConfig
     , defaultLoggingConfig
-    , setConsoleLevel
+    -- , setConsoleLevel
     )
 import Phone.Internal.FFI.Media (createMediaConfig, defaultMedaiConfig)
 import Phone.Internal.FFI.Transport
