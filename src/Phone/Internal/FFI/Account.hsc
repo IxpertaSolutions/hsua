@@ -1,4 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 -- |
 -- Module:       $HEADER$
@@ -10,7 +11,7 @@
 -- Stability:    experimental
 -- Portability:  GHC specific language extensions.
 module Phone.Internal.FFI.Account
-    ( AccountId
+    ( AccountId(AccountId)
     , credDataPlainPasswd
     , isAccountRegistered
     , removeAccount
@@ -41,14 +42,15 @@ import Data.Ord ((>=), (<), (>))
 import Foreign.C.Types (CInt(CInt))
 import Foreign.Marshal.Alloc (allocaBytes)
 import Foreign.Ptr (Ptr, plusPtr)
-import Foreign.Storable (peekByteOff, pokeByteOff)
+import Foreign.Storable (Storable, peekByteOff, pokeByteOff)
 import System.IO (IO)
+import Text.Show (Show)
 
-import Phone.Internal.FFI.Common (PjStatus)
+import Phone.Internal.FFI.Common (PjStatus(PjStatus))
 import Phone.Internal.FFI.PjString (PjString)
 
 
-type AccountId = CInt
+newtype AccountId = AccountId CInt deriving (Show, Storable)
 data AccountConfig
 data AccountInfo
 data CredInfo

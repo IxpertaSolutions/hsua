@@ -34,8 +34,8 @@ import Text.Show (Show, show)
 
 import Phone.Internal.FFI.Account (AccountId)
 import Phone.Internal.FFI.Common
-    ( CallId
-    , PjStatus
+    ( CallId(CallId)
+    , PjStatus(PjStatus)
     )
 
 

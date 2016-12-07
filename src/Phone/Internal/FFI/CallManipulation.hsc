@@ -19,12 +19,12 @@ import Foreign.Ptr (Ptr)
 
 import System.IO (IO)
 
-import Phone.Internal.FFI.Account (AccountId)
+import Phone.Internal.FFI.Account (AccountId(AccountId))
 import Phone.Internal.FFI.Common
-    ( CallId
+    ( CallId(CallId)
     , CallSetting
     , MsgData
-    , PjStatus
+    , PjStatus(PjStatus)
     , Reason
     , UserData
     )

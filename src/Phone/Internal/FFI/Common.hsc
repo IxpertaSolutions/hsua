@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 -- |
 -- Module:       $HEADER$
@@ -11,9 +12,14 @@
 module Phone.Internal.FFI.Common
   where
 
+import Data.Eq (Eq)
 import Foreign.C.Types (CInt)
+import Foreign.Storable (Storable)
 
 #include <pjsua-lib/pjsua.h>
+
+import Text.Show (Show)
+
 
 data CallSetting
 data MsgData
@@ -22,8 +28,8 @@ data SipEvent
 data UserData
 data MediaConfig
 
-type CallId = CInt
-type PjStatus = CInt
+newtype CallId = CallId CInt deriving (Show, Storable)
+newtype PjStatus = PjStatus CInt deriving (Eq, Show, Storable)
 
 -- | Equivalent to PJ_TRUE
 pjTrue :: CInt
@@ -33,8 +39,6 @@ pjTrue = #{const PJ_TRUE}
 pjFalse :: CInt
 pjFalse = #{const PJ_FALSE}
 
--- | Equivalent to PJ_SUCCESS
-pjSuccess :: CInt
-pjSuccess = #{const PJ_SUCCESS}
+#{enum PjStatus, PjStatus, pjSuccess = PJ_SUCCESS}
 
 data RxData

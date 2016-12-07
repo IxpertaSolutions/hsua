@@ -1,4 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 -- |
 -- Module:       $HEADER$
@@ -24,14 +25,15 @@ module Phone.Internal.FFI.Transport
 import Foreign.C.Types (CInt(CInt), CUInt)
 import Foreign.Marshal.Alloc (allocaBytes)
 import Foreign.Ptr (Ptr)
-import Foreign.Storable (pokeByteOff)
+import Foreign.Storable (Storable, pokeByteOff)
 import System.IO (IO)
 
-import Phone.Internal.FFI.Common (PjStatus)
+import Phone.Internal.FFI.Common (PjStatus(PjStatus))
 
 
 data TransportConfig
 data TransportId
+newtype TransportType = TransportType CInt deriving Storable
 
 withTransportConfig :: (Ptr TransportConfig -> IO a) -> IO a
 withTransportConfig = allocaBytes #{size pjsua_transport_config}
@@ -39,14 +41,13 @@ withTransportConfig = allocaBytes #{size pjsua_transport_config}
 setTransportPort :: Ptr TransportConfig -> CUInt -> IO ()
 setTransportPort = #{poke pjsua_transport_config, port}
 
-udpTransport :: CInt
-udpTransport = #{const PJSIP_TRANSPORT_UDP}
-
-tcpTransport :: CInt
-tcpTransport = #{const PJSIP_TRANSPORT_TCP}
+#{enum TransportType, TransportType,
+    udpTransport = PJSIP_TRANSPORT_UDP,
+    tcpTransport = PJSIP_TRANSPORT_TCP
+}
 
 foreign import ccall "pjsua_transport_create" createTransport
-    :: CInt -> Ptr TransportConfig -> Ptr TransportId -> IO PjStatus
+    :: TransportType -> Ptr TransportConfig -> Ptr TransportId -> IO PjStatus
 
 -- data TransportType =
 --     Unspecified

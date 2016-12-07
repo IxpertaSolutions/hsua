@@ -19,7 +19,7 @@ import Foreign.C.String (CString)
 
 import System.IO (IO)
 
-import Phone.Internal.FFI.Common (PjStatus)
+import Phone.Internal.FFI.Common (PjStatus(PjStatus))
 
 -- | Calls createPjSua which load the pjsua library in to memory.
 --

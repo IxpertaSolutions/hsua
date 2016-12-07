@@ -40,9 +40,15 @@ import Foreign.Ptr (FunPtr, Ptr)
 import Foreign.Storable (pokeByteOff)
 import System.IO (IO)
 
-import Phone.Internal.FFI.Common (PjStatus, CallId, SipEvent, RxData, MediaConfig)
+import Phone.Internal.FFI.Common
+    ( PjStatus(PjStatus)
+    , CallId(CallId)
+    , SipEvent
+    , RxData
+    , MediaConfig
+    )
 import Phone.Internal.FFI.Logging (LoggingConfig)
-import Phone.Internal.FFI.Account (AccountId)
+import Phone.Internal.FFI.Account (AccountId(AccountId))
 
 
 data PjSuaConfig

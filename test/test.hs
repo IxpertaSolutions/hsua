@@ -6,7 +6,6 @@ import Control.Concurrent (threadDelay)
 import Control.Monad ((>>=))
 import Data.Function (($))
 import Data.Monoid ((<>))
-import Foreign.C.Types (CInt)
 import Foreign.Marshal.Alloc (alloca)
 import Foreign.Ptr (nullPtr)
 import Foreign.Storable (peek)
@@ -39,6 +38,7 @@ import Phone.Internal.FFI.CallManipulation (answerCall, hangupAll, makeCall)
 import Phone.Internal.FFI.Common (pjSuccess, pjTrue)
 import Phone.Internal.FFI.Configuration
     ( OnIncomingCallHandler
+    , OnMediaStateHandler
     , OnRegistrationStateHandler
     , initializePjSua
     , setOnIncomingCallCallback
@@ -71,7 +71,7 @@ onRegistrationHandler id = do
     putStrLn $ "is account registred: " <> show r
     putStrLn "#####################################################"
 
-onMediaState :: CInt -> IO ()
+onMediaState :: OnMediaStateHandler
 onMediaState _ =
     putStrLn "Media state handler!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
