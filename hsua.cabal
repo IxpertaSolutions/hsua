@@ -50,7 +50,6 @@ library
     cbits/pjsua_config.c
     cbits/pjsua_device.c
     cbits/pjsua_media.c
-    cbits/pjsua_transport.c
 
   build-depends:
     base >=4.8 && <5

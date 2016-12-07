@@ -10,25 +10,34 @@
 -- Stability:    experimental
 -- Portability:  GHC specific language extensions.
 module Phone.Internal.FFI.Transport
+    ( TransportConfig
+    , createTransport
+    , setTransportPort
+    , tcpTransport
+    , udpTransport
+    , withTransportConfig
+    )
   where
 
-import Foreign.C.Types (CInt(CInt), CUInt(CUInt))
-import Foreign.Ptr (Ptr)
+#include <pjsua-lib/pjsua.h>
 
+import Foreign.C.Types (CInt(CInt), CUInt)
+import Foreign.Marshal.Alloc (allocaBytes)
+import Foreign.Ptr (Ptr)
+import Foreign.Storable (pokeByteOff)
 import System.IO (IO)
 
 import Phone.Internal.FFI.Common (PjStatus)
 
-#include <pjsua-lib/pjsua.h>
 
 data TransportConfig
 data TransportId
 
-foreign import ccall "create_pjsua_transport_config" createTransportConfig
-    :: IO (Ptr TransportConfig)
+withTransportConfig :: (Ptr TransportConfig -> IO a) -> IO a
+withTransportConfig = allocaBytes #{size pjsua_transport_config}
 
-foreign import ccall "pjsua_transport_config_set_port" setPort
-    :: Ptr TransportConfig -> CUInt -> IO ()
+setTransportPort :: Ptr TransportConfig -> CUInt -> IO ()
+setTransportPort = #{poke pjsua_transport_config, port}
 
 udpTransport :: CInt
 udpTransport = #{const PJSIP_TRANSPORT_UDP}

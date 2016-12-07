@@ -55,8 +55,8 @@ import Phone.Internal.FFI.Media (createMediaConfig, defaultMedaiConfig)
 import Phone.Internal.FFI.PjString (createPjString, deletePjString)
 import Phone.Internal.FFI.Transport
     ( createTransport
-    , createTransportConfig
     , udpTransport
+    , withTransportConfig
     )
 
 incomingCallHandler :: OnIncomingCallHandler
@@ -95,9 +95,9 @@ main = do
     _ <- initializePjSua pjCfg nullPtr mediaCfg
 
     -- Initialize transport
-    transportCfg <- createTransportConfig
-    -- setPort transportCfg 5060
-    createTransport udpTransport transportCfg nullPtr >>= print
+    withTransportConfig $ \transportCfg -> do
+        -- setPort transportCfg 5060
+        createTransport udpTransport transportCfg nullPtr >>= print
     _ <- pjsuaStart
     putStrLn "****************************************"
     printDevices

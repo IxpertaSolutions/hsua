@@ -69,8 +69,8 @@ import Phone.Internal.FFI.Logging
 import Phone.Internal.FFI.Media (createMediaConfig, defaultMedaiConfig)
 import Phone.Internal.FFI.Transport
     ( createTransport
-    , createTransportConfig
     , udpTransport
+    , withTransportConfig
     )
 
 withPhone :: Handlers -> IO () -> IO ()
@@ -96,8 +96,8 @@ withPhone Handlers{..} = bracket_ initSeq deinitSeq
         defaultMedaiConfig mediaCfg
         withLoggingConfig $ \logCfg ->
             initializePjSua pjCfg logCfg mediaCfg >>= check Initialization
-        transportCfg <- createTransportConfig
-        createTransport udpTransport transportCfg nullPtr >>= check Transport
+        withTransportConfig $ \transportCfg ->
+            createTransport udpTransport transportCfg nullPtr >>= check Transport
         pjsuaStart >>= check Start
 
     onCallState f callId _ = f callId
