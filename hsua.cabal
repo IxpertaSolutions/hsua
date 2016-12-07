@@ -49,7 +49,6 @@ library
     cbits/pj_string.c
     cbits/pjsua_config.c
     cbits/pjsua_device.c
-    cbits/pjsua_logging.c
     cbits/pjsua_media.c
     cbits/pjsua_transport.c
 
