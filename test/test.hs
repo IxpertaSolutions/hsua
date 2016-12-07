@@ -41,8 +41,6 @@ import Phone.Internal.FFI.Common (pjSuccess, pjTrue)
 import Phone.Internal.FFI.Configuration
     ( OnIncomingCallHandler
     , OnRegistrationStateHandler
-    , createPjConfig
-    , defaultPjConfig
     , initializePjSua
     , setOnIncomingCallCallback
     , setOnMediaStateCallback
@@ -50,6 +48,7 @@ import Phone.Internal.FFI.Configuration
     , toOnIncomingCall
     , toOnMediaState
     , toOnRegistrationState
+    , withPjConfig
     )
 import Phone.Internal.FFI.PjString (createPjString, deletePjString)
 import Phone.Internal.FFI.Transport
@@ -83,13 +82,12 @@ main = do
     putStrLn $ "pjTrue: " <> show pjTrue
     putStrLn $ "pjSuccess: " <> show pjSuccess
     -- Initialize pjsua lib.
-    pjCfg <- createPjConfig
-    defaultPjConfig pjCfg
-    toOnIncomingCall incomingCallHandler >>= setOnIncomingCallCallback pjCfg
-    toOnMediaState onMediaState >>= setOnMediaStateCallback pjCfg
-    toOnRegistrationState onRegistrationHandler
-        >>= setOnRegistrationStateCallback pjCfg
-    _ <- initializePjSua pjCfg nullPtr nullPtr
+    _ <- withPjConfig $ \pjCfg -> do
+        toOnIncomingCall incomingCallHandler >>= setOnIncomingCallCallback pjCfg
+        toOnMediaState onMediaState >>= setOnMediaStateCallback pjCfg
+        toOnRegistrationState onRegistrationHandler
+            >>= setOnRegistrationStateCallback pjCfg
+        initializePjSua pjCfg nullPtr nullPtr
 
     -- Initialize transport
     withTransportConfig $ \transportCfg -> do

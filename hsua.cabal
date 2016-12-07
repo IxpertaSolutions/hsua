@@ -46,7 +46,6 @@ library
     Phone.Internal.Utils
   c-sources:
     cbits/pj_string.c
-    cbits/pjsua_config.c
     cbits/pjsua_device.c
 
   build-depends:

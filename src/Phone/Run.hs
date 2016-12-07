@@ -48,9 +48,7 @@ import Phone.Internal.FFI (createPjSua, destroyPjSua, pjsuaStart, setNullSndDev)
 import Phone.Internal.FFI.CallManipulation (hangupAll)
 import Phone.Internal.FFI.Common (pjSuccess)
 import Phone.Internal.FFI.Configuration
-    ( createPjConfig
-    , defaultPjConfig
-    , initializePjSua
+    ( initializePjSua
     , setOnCallStateCallback
     , setOnIncomingCallCallback
     , setOnMediaStateCallback
@@ -61,6 +59,7 @@ import Phone.Internal.FFI.Configuration
     , toOnMediaState
     , toOnRegistrationStarted
     , toOnRegistrationState
+    , withPjConfig
     )
 import Phone.Internal.FFI.Logging
     ( withLoggingConfig
@@ -77,22 +76,21 @@ withPhone Handlers{..} = bracket_ initSeq deinitSeq
   where
     initSeq = do
         createPjSua >>= check CreateLib
-        pjCfg <- createPjConfig
-        defaultPjConfig pjCfg
-        maybeHandler onCallStateChange
-            ((toOnCallState . onCallState) >=> setOnCallStateCallback pjCfg)
-        maybeHandler onIncomingCall
-            ((toOnIncomingCall . onIncCall)
-            >=> setOnIncomingCallCallback pjCfg)
-        maybeHandler onRegistrationStateChange
-            (toOnRegistrationState >=> setOnRegistrationStateCallback pjCfg)
-        maybeHandler onRegistrationStarted
-            ((toOnRegistrationStarted . onRegStarted)
-            >=> setOnRegistrationStartedCallback pjCfg)
-        maybeHandler onMediaStateChange
-            (toOnMediaState >=> setOnMediaStateCallback pjCfg)
-        withLoggingConfig $ \logCfg ->
-            initializePjSua pjCfg logCfg nullPtr >>= check Initialization
+        withPjConfig $ \pjCfg -> do
+            maybeHandler onCallStateChange
+                ((toOnCallState . onCallState) >=> setOnCallStateCallback pjCfg)
+            maybeHandler onIncomingCall
+                ((toOnIncomingCall . onIncCall)
+                >=> setOnIncomingCallCallback pjCfg)
+            maybeHandler onRegistrationStateChange
+                (toOnRegistrationState >=> setOnRegistrationStateCallback pjCfg)
+            maybeHandler onRegistrationStarted
+                ((toOnRegistrationStarted . onRegStarted)
+                >=> setOnRegistrationStartedCallback pjCfg)
+            maybeHandler onMediaStateChange
+                (toOnMediaState >=> setOnMediaStateCallback pjCfg)
+            withLoggingConfig $ \logCfg ->
+                initializePjSua pjCfg logCfg nullPtr >>= check Initialization
         withTransportConfig $ \transportCfg ->
             createTransport udpTransport transportCfg nullPtr >>= check Transport
         pjsuaStart >>= check Start
