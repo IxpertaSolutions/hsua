@@ -17,7 +17,6 @@ import Foreign.C.Types (CInt)
 
 data CallSetting
 data MsgData
-data PjString
 data Reason
 data SipEvent
 data UserData

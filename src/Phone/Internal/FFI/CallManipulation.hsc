@@ -19,16 +19,16 @@ import Foreign.Ptr (Ptr)
 
 import System.IO (IO)
 
+import Phone.Internal.FFI.Account (AccountId)
 import Phone.Internal.FFI.Common
     ( CallId
     , CallSetting
     , MsgData
     , PjStatus
-    , PjString
     , Reason
     , UserData
     )
-import Phone.Internal.FFI.Account (AccountId)
+import Phone.Internal.FFI.PjString (PjString)
 
 -- | Send response to incoming INVITE request with call setting param.
 -- Depending on the status code specified as parameter, this function may send

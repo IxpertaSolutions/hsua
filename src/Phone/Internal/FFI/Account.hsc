@@ -44,8 +44,8 @@ import Foreign.Ptr (Ptr, plusPtr)
 import Foreign.Storable (peekByteOff, pokeByteOff)
 import System.IO (IO)
 
-import Phone.Internal.FFI.Common (PjStatus, PjString)
-import Phone.Internal.FFI.PjString (setPjString)
+import Phone.Internal.FFI.Common (PjStatus)
+import Phone.Internal.FFI.PjString (PjString)
 
 
 type AccountId = CInt
@@ -61,11 +61,11 @@ withAccountConfig f = allocaBytes #{size pjsua_acc_config} $ \cfg -> do
 foreign import ccall "pjsua_acc_config_default" defaultAccountConfig
     :: Ptr AccountConfig -> IO ()
 
-setAccountId :: Ptr AccountConfig -> Ptr PjString -> IO ()
-setAccountId = setPjString . #{ptr pjsua_acc_config, id}
+setAccountId :: Ptr AccountConfig -> PjString -> IO ()
+setAccountId = #{poke pjsua_acc_config, id}
 
-setAccountRegUri :: Ptr AccountConfig -> Ptr PjString -> IO ()
-setAccountRegUri = setPjString . #{ptr pjsua_acc_config, reg_uri}
+setAccountRegUri :: Ptr AccountConfig -> PjString -> IO ()
+setAccountRegUri = #{poke pjsua_acc_config, reg_uri}
 
 setAccountCredCount :: Ptr AccountConfig -> CInt -> IO ()
 setAccountCredCount = #{poke pjsua_acc_config, cred_count}
@@ -74,17 +74,14 @@ credInfo :: Ptr AccountConfig -> Int -> Ptr CredInfo
 credInfo cfg i = #{ptr pjsua_acc_config, cred_info} cfg
     `plusPtr` (i * #{size pjsip_cred_info})
 
-setAccountRealm :: Ptr AccountConfig -> Int -> Ptr PjString -> IO ()
-setAccountRealm cfg =
-    setPjString . #{ptr pjsip_cred_info, realm} . credInfo cfg
+setAccountRealm :: Ptr AccountConfig -> Int -> PjString -> IO ()
+setAccountRealm cfg = #{poke pjsip_cred_info, realm} . credInfo cfg
 
-setAccountScheme :: Ptr AccountConfig -> Int -> Ptr PjString -> IO ()
-setAccountScheme cfg =
-    setPjString . #{ptr pjsip_cred_info, scheme} . credInfo cfg
+setAccountScheme :: Ptr AccountConfig -> Int -> PjString -> IO ()
+setAccountScheme cfg = #{poke pjsip_cred_info, scheme} . credInfo cfg
 
-setAccountUsername :: Ptr AccountConfig -> Int -> Ptr PjString -> IO ()
-setAccountUsername cfg =
-    setPjString . #{ptr pjsip_cred_info, username} . credInfo cfg
+setAccountUsername :: Ptr AccountConfig -> Int -> PjString -> IO ()
+setAccountUsername cfg = #{poke pjsip_cred_info, username} . credInfo cfg
 
 credDataPlainPasswd :: CInt
 credDataPlainPasswd = #{const PJSIP_CRED_DATA_PLAIN_PASSWD}
@@ -92,9 +89,8 @@ credDataPlainPasswd = #{const PJSIP_CRED_DATA_PLAIN_PASSWD}
 setAccountDataType :: Ptr AccountConfig -> Int -> CInt -> IO ()
 setAccountDataType cfg = #{poke pjsip_cred_info, data_type} . credInfo cfg
 
-setAccountData :: Ptr AccountConfig -> Int -> Ptr PjString -> IO ()
-setAccountData cfg =
-    setPjString . #{ptr pjsip_cred_info, data} . credInfo cfg
+setAccountData :: Ptr AccountConfig -> Int -> PjString -> IO ()
+setAccountData cfg = #{poke pjsip_cred_info, data} . credInfo cfg
 
 setAccountRegisterOnAdd :: Ptr AccountConfig -> CInt -> IO ()
 setAccountRegisterOnAdd = #{poke pjsua_acc_config, register_on_acc_add}

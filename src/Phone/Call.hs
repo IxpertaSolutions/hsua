@@ -20,19 +20,21 @@ module Phone.Call
     )
   where
 
+import Prelude (fromIntegral)
+
 import Control.Applicative (Applicative((<*>)))
 import Control.Monad ((>>=))
 import Data.Function (($))
 import Data.Functor ((<$>))
 import Data.Int (Int)
-import Data.Text (Text, unpack)
-import Foreign.C.String (newCString)
 import Foreign.Marshal.Alloc (alloca)
 import Foreign.Ptr (nullPtr)
 import Foreign.Storable (peek)
-import Prelude (fromIntegral)
 import System.IO (IO)
 import Text.Show (Show)
+
+import Data.Text (Text)
+import qualified Data.Text as T (unpack)
 
 import Phone.Exception
     ( PhoneException
@@ -65,7 +67,7 @@ import qualified Phone.Internal.FFI.CallManipulation as FFI
     , makeCall
     )
 import Phone.Internal.FFI.Common (CallId)
-import Phone.Internal.FFI.PjString (createPjString)
+import Phone.Internal.FFI.PjString (withPjStringPtr)
 import Phone.Internal.Utils (check)
 
 
@@ -99,8 +101,8 @@ hangupCall callId status =
     >>= check HangupCall
 
 makeCall :: AccountId -> Text -> IO CallId
-makeCall accId url = do
-    dst <- newCString (unpack url) >>= createPjString
+makeCall accId url =
+    withPjStringPtr (T.unpack url) $ \urlPjStr ->
     alloca $ \callId -> do
-        FFI.makeCall accId dst nullPtr nullPtr nullPtr callId >>= check MakeCall
+        FFI.makeCall accId urlPjStr nullPtr nullPtr nullPtr callId >>= check MakeCall
         peek callId

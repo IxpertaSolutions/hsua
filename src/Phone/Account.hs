@@ -25,14 +25,15 @@ module Phone.Account
   where
 
 import Control.Monad ((>>=))
-import Data.Function (($), (.))
+import Data.Function (($))
 import Data.Monoid ((<>))
-import Data.Text (Text, unpack)
-import Foreign.C.String (newCString)
 import Foreign.Marshal.Alloc (alloca)
 import Foreign.Storable (peek)
 import System.IO (IO)
 import Text.Show (Show)
+
+import Data.Text (Text)
+import qualified Data.Text as T (unpack)
 
 import Phone.Exception
     ( PhoneException
@@ -59,9 +60,9 @@ import qualified Phone.Internal.FFI.Account as FFI
     , setAccountUsername
     , withAccountConfig
     )
-import Phone.Internal.FFI.Common (pjFalse, pjTrue)
-import Phone.Internal.FFI.PjString (createPjString)
-import Phone.Internal.Utils (check)
+import qualified Phone.Internal.FFI.Common as FFI (pjFalse, pjTrue)
+import qualified Phone.Internal.FFI.PjString as FFI (withPjString)
+import qualified Phone.Internal.Utils as FFI (check)
 
 
 data AuthScheme = Digest | Basic
@@ -97,35 +98,38 @@ mkSimpleAccount server user password = Account
     }
 
 createAccount :: WhenRegister -> Account -> IO AccountId
-createAccount whenReg Account{..} = FFI.withAccountConfig $ \accCfg -> do
-    newCString' accountId >>= createPjString >>= FFI.setAccountId accCfg
-    newCString' registrationUri >>= createPjString
-        >>= FFI.setAccountRegUri accCfg
-    FFI.setAccountCredCount accCfg 1
-    newCString' realm >>= createPjString >>= FFI.setAccountRealm accCfg 0
-    newCString' (schemeText authScheme) >>= createPjString
-        >>= FFI.setAccountScheme accCfg 0
-    newCString' userName >>= createPjString >>= FFI.setAccountUsername accCfg 0
-    FFI.setAccountDataType accCfg 0 FFI.credDataPlainPasswd
-    newCString' password >>= createPjString >>= FFI.setAccountData accCfg 0
-    FFI.setAccountRegisterOnAdd accCfg $ toVal whenReg
-    alloca $ \accId -> do
-        FFI.setAccount accCfg pjTrue accId >>= check CreateAccount
-        peek accId
+createAccount whenReg Account{..} =
+    FFI.withPjString (T.unpack accountId) $ \accountIdPjStr ->
+    FFI.withPjString (T.unpack registrationUri) $ \registrationUriPjStr ->
+    FFI.withPjString (T.unpack realm) $ \realmPjStr ->
+    FFI.withPjString (T.unpack $ schemeText authScheme) $ \schemePjStr ->
+    FFI.withPjString (T.unpack userName) $ \userNamePjStr ->
+    FFI.withPjString (T.unpack password) $ \passwordPjStr ->
+    FFI.withAccountConfig $ \accCfg -> do
+        FFI.setAccountId accCfg accountIdPjStr
+        FFI.setAccountRegUri accCfg registrationUriPjStr
+        FFI.setAccountCredCount accCfg 1
+        FFI.setAccountRealm accCfg 0 realmPjStr
+        FFI.setAccountScheme accCfg 0 schemePjStr
+        FFI.setAccountUsername accCfg 0 userNamePjStr
+        FFI.setAccountDataType accCfg 0 FFI.credDataPlainPasswd
+        FFI.setAccountData accCfg 0 passwordPjStr
+        FFI.setAccountRegisterOnAdd accCfg $ toVal whenReg
+        alloca $ \accId -> do
+            FFI.setAccount accCfg FFI.pjTrue accId >>= FFI.check CreateAccount
+            peek accId
   where
-    newCString' = newCString . unpack
-
-    toVal Now = pjTrue
-    toVal Later = pjFalse
+    toVal Now = FFI.pjTrue
+    toVal Later = FFI.pjFalse
 
     schemeText Digest = "digest"
     schemeText Basic = "basic"
 
 registerAccount :: AccountId -> IO ()
 registerAccount accId =
-    FFI.setAccountRegistration accId pjTrue >>= check Registration
+    FFI.setAccountRegistration accId FFI.pjTrue >>= FFI.check Registration
 
 unregisterAccount :: AccountId -> IO ()
 unregisterAccount accId =
-    FFI.setAccountRegistration accId pjFalse >>= check Unregistration
+    FFI.setAccountRegistration accId FFI.pjFalse >>= FFI.check Unregistration
 

@@ -6,7 +6,6 @@ import Control.Concurrent (threadDelay)
 import Control.Monad ((>>=))
 import Data.Function (($))
 import Data.Monoid ((<>))
-import Foreign.C.String (newCString)
 import Foreign.C.Types (CInt)
 import Foreign.Marshal.Alloc (alloca)
 import Foreign.Ptr (nullPtr)
@@ -50,7 +49,10 @@ import Phone.Internal.FFI.Configuration
     , toOnRegistrationState
     , withPjConfig
     )
-import Phone.Internal.FFI.PjString (createPjString, deletePjString)
+import Phone.Internal.FFI.PjString
+    ( withPjString
+    , withPjStringPtr
+    )
 import Phone.Internal.FFI.Transport
     ( createTransport
     , udpTransport
@@ -77,8 +79,6 @@ main :: IO ()
 main = do
     hSetBuffering stdout NoBuffering
     createPjSua >>= print
-    str <- newCString "asdflfs" >>= createPjString
-    deletePjString str
     putStrLn $ "pjTrue: " <> show pjTrue
     putStrLn $ "pjSuccess: " <> show pjSuccess
     -- Initialize pjsua lib.
@@ -99,25 +99,31 @@ main = do
     putStrLn "****************************************"
 
     -- Create account
-    accountId <- withAccountConfig $ \accCfg -> do
-        newCString "sip:420242492304@10.120.51.51" >>= createPjString
-            >>= setAccountId accCfg
-        newCString "sip:10.120.51.51" >>= createPjString >>= setAccountRegUri accCfg
-        setAccountCredCount accCfg 1
-        newCString "*" >>= createPjString >>= setAccountRealm accCfg 0
-        newCString "digest" >>= createPjString >>= setAccountScheme accCfg 0
-        newCString "420242492304" >>= createPjString >>= setAccountUsername accCfg 0
-        setAccountDataType accCfg 0 credDataPlainPasswd
-        newCString "420242492304" >>= createPjString >>= setAccountData accCfg 0
-        alloca $ \accountId -> do
-            _ <- setAccount accCfg pjTrue accountId
-            peek accountId
+    accountId <-
+        withPjString "sip:420242492304@10.120.51.51" $ \accountIdPjStr ->
+        withPjString "sip:10.120.51.51" $ \registrationUriPjStr ->
+        withPjString "*" $ \realmPjStr ->
+        withPjString "digest" $ \schemePjStr ->
+        withPjString "420242492304" $ \userNamePjStr ->
+        withPjString "420242492304" $ \passwordPjStr ->
+        withAccountConfig $ \accCfg -> do
+            setAccountId accCfg accountIdPjStr
+            setAccountRegUri accCfg registrationUriPjStr
+            setAccountCredCount accCfg 1
+            setAccountRealm accCfg 0 realmPjStr
+            setAccountScheme accCfg 0 schemePjStr
+            setAccountUsername accCfg 0 userNamePjStr
+            setAccountDataType accCfg 0 credDataPlainPasswd
+            setAccountData accCfg 0 passwordPjStr
+            alloca $ \accountId -> do
+                _ <- setAccount accCfg pjTrue accountId
+                peek accountId
 
     setNullSndDev
 
     threadDelay 1000000
-    dst <- newCString "sip:420242492306@10.120.51.51" >>= createPjString
-    makeCall accountId dst nullPtr nullPtr nullPtr nullPtr >>= print
+    withPjStringPtr "sip:420242492306@10.120.51.51" $ \dstPjStr ->
+        makeCall accountId dstPjStr nullPtr nullPtr nullPtr nullPtr >>= print
 
     threadDelay 10000000
     hangupAll
