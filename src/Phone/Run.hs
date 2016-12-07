@@ -66,7 +66,6 @@ import Phone.Internal.FFI.Logging
     ( withLoggingConfig
     -- , setConsoleLevel
     )
-import Phone.Internal.FFI.Media (createMediaConfig, defaultMedaiConfig)
 import Phone.Internal.FFI.Transport
     ( createTransport
     , udpTransport
@@ -92,10 +91,8 @@ withPhone Handlers{..} = bracket_ initSeq deinitSeq
             >=> setOnRegistrationStartedCallback pjCfg)
         maybeHandler onMediaStateChange
             (toOnMediaState >=> setOnMediaStateCallback pjCfg)
-        mediaCfg <- createMediaConfig
-        defaultMedaiConfig mediaCfg
         withLoggingConfig $ \logCfg ->
-            initializePjSua pjCfg logCfg mediaCfg >>= check Initialization
+            initializePjSua pjCfg logCfg nullPtr >>= check Initialization
         withTransportConfig $ \transportCfg ->
             createTransport udpTransport transportCfg nullPtr >>= check Transport
         pjsuaStart >>= check Start

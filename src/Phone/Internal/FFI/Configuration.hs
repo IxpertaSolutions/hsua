@@ -17,9 +17,8 @@ import Foreign.Ptr (FunPtr, Ptr)
 
 import System.IO (IO)
 
-import Phone.Internal.FFI.Common (PjStatus, CallId, SipEvent, RxData)
+import Phone.Internal.FFI.Common (PjStatus, CallId, SipEvent, RxData, MediaConfig)
 import Phone.Internal.FFI.Logging (LoggingConfig)
-import Phone.Internal.FFI.Media (MediaConfig)
 import Phone.Internal.FFI.Account (AccountId)
 
 

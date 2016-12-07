@@ -51,7 +51,6 @@ import Phone.Internal.FFI.Configuration
     , toOnMediaState
     , toOnRegistrationState
     )
-import Phone.Internal.FFI.Media (createMediaConfig, defaultMedaiConfig)
 import Phone.Internal.FFI.PjString (createPjString, deletePjString)
 import Phone.Internal.FFI.Transport
     ( createTransport
@@ -90,9 +89,7 @@ main = do
     toOnMediaState onMediaState >>= setOnMediaStateCallback pjCfg
     toOnRegistrationState onRegistrationHandler
         >>= setOnRegistrationStateCallback pjCfg
-    mediaCfg <- createMediaConfig
-    defaultMedaiConfig mediaCfg
-    _ <- initializePjSua pjCfg nullPtr mediaCfg
+    _ <- initializePjSua pjCfg nullPtr nullPtr
 
     -- Initialize transport
     withTransportConfig $ \transportCfg -> do

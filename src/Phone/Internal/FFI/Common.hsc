@@ -21,6 +21,7 @@ data PjString
 data Reason
 data SipEvent
 data UserData
+data MediaConfig
 
 type CallId = CInt
 type PjStatus = CInt
