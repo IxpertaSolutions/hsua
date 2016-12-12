@@ -41,6 +41,7 @@ library
     Phone.Internal.FFI.Common
     Phone.Internal.FFI.Configuration
     Phone.Internal.FFI.Logging
+    Phone.Internal.FFI.Media
     Phone.Internal.FFI.PjString
     Phone.Internal.FFI.Transport
     Phone.Internal.Utils
@@ -76,6 +77,7 @@ executable test
     Phone.Internal.FFI.Common
     Phone.Internal.FFI.Configuration
     Phone.Internal.FFI.Logging
+    Phone.Internal.FFI.Media
     Phone.Internal.FFI.PjString
     Phone.Internal.FFI.Transport
     Phone.Internal.Utils
