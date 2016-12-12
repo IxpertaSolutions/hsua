@@ -46,7 +46,7 @@ import Phone.Handlers
     )
 import Phone.Internal.FFI (createPjSua, destroyPjSua, pjsuaStart, setNullSndDev)
 import Phone.Internal.FFI.CallManipulation (hangupAll)
-import Phone.Internal.FFI.Common (pjSuccess)
+import Phone.Internal.FFI.Common (pjSuccess, pjFalse)
 import Phone.Internal.FFI.Configuration
     ( initializePjSua
     , setOnCallStateCallback
@@ -63,8 +63,11 @@ import Phone.Internal.FFI.Configuration
     )
 import Phone.Internal.FFI.Logging
     ( withLoggingConfig
+    , setLogFilename
+    , setMsgLogging
     -- , setConsoleLevel
     )
+import Phone.Internal.FFI.PjString (withPjString)
 import Phone.Internal.FFI.Transport
     ( createTransport
     , udpTransport
@@ -89,8 +92,11 @@ withPhone Handlers{..} = bracket_ initSeq deinitSeq
                 >=> setOnRegistrationStartedCallback pjCfg)
             maybeHandler onMediaStateChange
                 (toOnMediaState >=> setOnMediaStateCallback pjCfg)
-            withLoggingConfig $ \logCfg ->
-                initializePjSua pjCfg logCfg nullPtr >>= check Initialization
+            withPjString "pjsua_log.txt" $ \logFile -> -- FIXME: hardcoded
+                withLoggingConfig $ \logCfg -> do
+                    setMsgLogging logCfg pjFalse
+                    setLogFilename logCfg logFile
+                    initializePjSua pjCfg logCfg nullPtr >>= check Initialization
         withTransportConfig $ \transportCfg ->
             createTransport udpTransport transportCfg nullPtr >>= check Transport
         pjsuaStart >>= check Start

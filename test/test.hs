@@ -35,7 +35,7 @@ import Phone.Internal.FFI.Account
     , withAccountConfig
     )
 import Phone.Internal.FFI.CallManipulation (answerCall, hangupAll, makeCall)
-import Phone.Internal.FFI.Common (pjSuccess, pjTrue)
+import Phone.Internal.FFI.Common (pjSuccess, pjTrue, pjFalse)
 import Phone.Internal.FFI.Configuration
     ( OnIncomingCallHandler
     , OnMediaStateHandler
@@ -48,6 +48,12 @@ import Phone.Internal.FFI.Configuration
     , toOnMediaState
     , toOnRegistrationState
     , withPjConfig
+    )
+import Phone.Internal.FFI.Logging
+    ( withLoggingConfig
+    , setLogFilename
+    , setMsgLogging
+    -- , setConsoleLevel
     )
 import Phone.Internal.FFI.PjString
     ( withPjString
@@ -87,7 +93,11 @@ main = do
         toOnMediaState onMediaState >>= setOnMediaStateCallback pjCfg
         toOnRegistrationState onRegistrationHandler
             >>= setOnRegistrationStateCallback pjCfg
-        initializePjSua pjCfg nullPtr nullPtr
+        withPjString "pjsua_log.txt" $ \logFile ->
+            withLoggingConfig $ \logCfg -> do
+                setMsgLogging logCfg pjFalse
+                setLogFilename logCfg logFile
+                initializePjSua pjCfg logCfg nullPtr
 
     -- Initialize transport
     withTransportConfig $ \transportCfg -> do
