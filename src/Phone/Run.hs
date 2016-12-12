@@ -44,7 +44,7 @@ import Phone.Handlers
         , onRegistrationStateChange
         )
     )
-import Phone.Internal.FFI (createPjSua, destroyPjSua, pjsuaStart, setNullSndDev)
+import Phone.Internal.FFI (createPjSua, destroyPjSua, pjsuaStart, setNullSndDev, codecSetPriority)
 import Phone.Internal.FFI.CallManipulation (hangupAll)
 import Phone.Internal.FFI.Common (pjSuccess, pjFalse)
 import Phone.Internal.FFI.Configuration
@@ -67,7 +67,8 @@ import Phone.Internal.FFI.Logging
     , setMsgLogging
     -- , setConsoleLevel
     )
-import Phone.Internal.FFI.PjString (withPjString)
+import Phone.Internal.FFI.Media (withMediaConfig, setMediaConfigClockRate)
+import Phone.Internal.FFI.PjString (withPjString, withPjStringPtr)
 import Phone.Internal.FFI.Transport
     ( createTransport
     , udpTransport
@@ -92,14 +93,32 @@ withPhone Handlers{..} = bracket_ initSeq deinitSeq
                 >=> setOnRegistrationStartedCallback pjCfg)
             maybeHandler onMediaStateChange
                 (toOnMediaState >=> setOnMediaStateCallback pjCfg)
-            withPjString "pjsua_log.txt" $ \logFile -> -- FIXME: hardcoded
-                withLoggingConfig $ \logCfg -> do
-                    setMsgLogging logCfg pjFalse
-                    setLogFilename logCfg logFile
-                    initializePjSua pjCfg logCfg nullPtr >>= check Initialization
+            withLog $ \logCfg ->
+                withMedia $ \mediaCfg ->
+                    initializePjSua pjCfg logCfg mediaCfg >>= check Initialization
         withTransportConfig $ \transportCfg ->
             createTransport udpTransport transportCfg nullPtr >>= check Transport
         pjsuaStart >>= check Start
+        setCodecs
+
+    withLog f =
+        withPjString "pjsua_log.txt" $ \logFile -> -- FIXME: hardcoded
+        withLoggingConfig $ \logCfg -> do
+            setMsgLogging logCfg pjFalse
+            setLogFilename logCfg logFile
+            f logCfg
+
+    withMedia f =
+        withMediaConfig $ \mediaCfg -> do
+            -- When pjproject is built without resampling (as it happens to be
+            -- in Debian), we want to fix the rate and codecs so that we don't
+            -- crash in resampler creation.
+            setMediaConfigClockRate mediaCfg 8000
+            f mediaCfg
+
+    setCodecs = do
+        withPjStringPtr "PCMU" $ \codecStr -> codecSetPriority codecStr 255
+        withPjStringPtr "PCMA" $ \codecStr -> codecSetPriority codecStr 255
 
     onCallState f callId _ = f callId
     onIncCall f acc callId _ = f acc callId

@@ -10,16 +10,27 @@
 -- Stability:    experimental
 -- Portability:  GHC specific language extensions.
 module Phone.Internal.FFI
+    ( codecSetPriority
+    , createPjSua
+    , destroyPjSua
+    , pjsuaStart
+    , printDevices
+    , setNullSndDev
+    , verifySipUrl
+    , verifyTelUrl
+    )
   where
 
 #include <pjsua-lib/pjsua.h>
 
-import Foreign.C.Types (CInt(CInt))
+import Foreign.C.Types (CInt(CInt), CUChar(CUChar))
 import Foreign.C.String (CString)
-
+import Foreign.Ptr (Ptr)
 import System.IO (IO)
 
 import Phone.Internal.FFI.Common (PjStatus(PjStatus))
+import Phone.Internal.FFI.PjString (PjString)
+
 
 -- | Calls createPjSua which load the pjsua library in to memory.
 --
@@ -41,4 +52,8 @@ foreign import ccall "pjsua_verify_url" verifyTelUrl
     :: CString -> IO PjStatus
 
 foreign import ccall "pjsua_set_null_snd_dev" setNullSndDev :: IO ()
+
+foreign import ccall "pjsua_codec_set_priority" codecSetPriority
+    :: Ptr PjString -> CUChar -> IO ()
+
 foreign import ccall "print_devices" printDevices :: IO ()

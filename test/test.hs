@@ -15,6 +15,7 @@ import Text.Show (show)
 
 import Phone.Internal.FFI
     ( createPjSua
+    , codecSetPriority
     , destroyPjSua
     , pjsuaStart
     , printDevices
@@ -59,6 +60,7 @@ import Phone.Internal.FFI.PjString
     ( withPjString
     , withPjStringPtr
     )
+import Phone.Internal.FFI.Media (withMediaConfig, setMediaConfigClockRate)
 import Phone.Internal.FFI.Transport
     ( createTransport
     , udpTransport
@@ -87,17 +89,30 @@ main = do
     createPjSua >>= print
     putStrLn $ "pjTrue: " <> show pjTrue
     putStrLn $ "pjSuccess: " <> show pjSuccess
+
+    let withLog f =
+            withPjString "pjsua_log.txt" $ \logFile ->
+            withLoggingConfig $ \logCfg -> do
+                setMsgLogging logCfg pjFalse
+                setLogFilename logCfg logFile
+                f logCfg
+    let withMedia f =
+            withMediaConfig $ \mediaCfg -> do
+                setMediaConfigClockRate mediaCfg 8000
+                f mediaCfg
+
     -- Initialize pjsua lib.
     _ <- withPjConfig $ \pjCfg -> do
         toOnIncomingCall incomingCallHandler >>= setOnIncomingCallCallback pjCfg
         toOnMediaState onMediaState >>= setOnMediaStateCallback pjCfg
         toOnRegistrationState onRegistrationHandler
             >>= setOnRegistrationStateCallback pjCfg
-        withPjString "pjsua_log.txt" $ \logFile ->
-            withLoggingConfig $ \logCfg -> do
-                setMsgLogging logCfg pjFalse
-                setLogFilename logCfg logFile
-                initializePjSua pjCfg logCfg nullPtr
+        withLog $ \logCfg ->
+            withMedia $ \mediaCfg ->
+                initializePjSua pjCfg logCfg mediaCfg
+
+    withPjStringPtr "PCMU" $ \codecStr -> codecSetPriority codecStr 255
+    withPjStringPtr "PCMA" $ \codecStr -> codecSetPriority codecStr 255
 
     -- Initialize transport
     withTransportConfig $ \transportCfg -> do
