@@ -36,9 +36,10 @@ import Prelude (Num((*)))
 
 import Control.Applicative (pure)
 import Data.Bool (Bool, (&&))
+import Data.Eq (Eq)
 import Data.Function (($), (.))
 import Data.Int (Int)
-import Data.Ord ((>=), (<), (>))
+import Data.Ord (Ord((>=), (<), (>)))
 import Foreign.C.Types (CInt(CInt))
 import Foreign.Marshal.Alloc (allocaBytes)
 import Foreign.Ptr (Ptr, plusPtr)
@@ -50,7 +51,7 @@ import Phone.Internal.FFI.Common (PjStatus(PjStatus))
 import Phone.Internal.FFI.PjString (PjString)
 
 
-newtype AccountId = AccountId CInt deriving (Show, Storable)
+newtype AccountId = AccountId CInt deriving (Eq, Ord, Show, Storable)
 data AccountConfig
 data AccountInfo
 data CredInfo

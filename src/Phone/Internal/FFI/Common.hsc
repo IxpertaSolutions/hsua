@@ -28,7 +28,7 @@ data SipEvent
 data UserData
 data MediaConfig
 
-newtype CallId = CallId CInt deriving (Show, Storable)
+newtype CallId = CallId CInt deriving (Eq, Show, Storable)
 newtype PjStatus = PjStatus CInt deriving (Eq, Show, Storable)
 
 -- | Equivalent to PJ_TRUE
