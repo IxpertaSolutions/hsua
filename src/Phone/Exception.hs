@@ -30,4 +30,5 @@ data PhoneException
     | Registration
     | Unregistration
     | CreateAccount
+    | RemoveAccount
   deriving (Typeable, Show, Exception)

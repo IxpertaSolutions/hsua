@@ -15,14 +15,14 @@ module Phone.Handlers
 
 import Data.Int (Int)
 import Data.Maybe (Maybe)
+
 import Phone.Internal.FFI.Account (AccountId)
-import Phone.Internal.FFI.Common (CallId)
-import System.IO (IO)
+import Phone.Internal.FFI.Common (CallId, PjIO)
 
 data Handlers = Handlers
-    { onCallStateChange :: Maybe (CallId -> IO ())
-    , onIncomingCall :: Maybe (AccountId -> CallId -> IO ())
-    , onRegistrationStateChange :: Maybe (AccountId -> IO ())
-    , onRegistrationStarted :: Maybe (AccountId -> Int -> IO ())
-    , onMediaStateChange :: Maybe (CallId -> IO ())
+    { onCallStateChange :: Maybe (CallId -> PjIO ())
+    , onIncomingCall :: Maybe (AccountId -> CallId -> PjIO ())
+    , onRegistrationStateChange :: Maybe (AccountId -> PjIO ())
+    , onRegistrationStarted :: Maybe (AccountId -> Int -> PjIO ())
+    , onMediaStateChange :: Maybe (CallId -> PjIO ())
     }

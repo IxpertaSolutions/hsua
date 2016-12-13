@@ -21,7 +21,7 @@ module Phone.Internal.FFI.CallInfo
 #include <pjsua-lib/pjsua.h>
 
 import Data.Eq (Eq)
-import Data.Function ((.))
+import Data.Function (($), (.))
 import Data.Functor ((<$>))
 import Data.Monoid ((<>))
 import Foreign.C.Types (CInt(CInt))
@@ -29,28 +29,31 @@ import Foreign.Marshal.Alloc (allocaBytes)
 import Foreign.Ptr (Ptr)
 import Foreign.Storable (peekByteOff)
 import Prelude (Enum, toEnum, fromEnum, fromIntegral, error)
-import System.IO (IO)
 import Text.Show (Show, show)
+
+import Control.Monad.IO.Class (liftIO)
 
 import Phone.Internal.FFI.Account (AccountId)
 import Phone.Internal.FFI.Common
     ( CallId(CallId)
+    , PjIO(PjIO)
     , PjStatus(PjStatus)
+    , liftAlloc
     )
 
 
 data CallInfo
 
-withCallInfo :: (Ptr CallInfo -> IO a) -> IO a
-withCallInfo = allocaBytes #{size pjsua_call_info}
+withCallInfo :: (Ptr CallInfo -> PjIO a) -> PjIO a
+withCallInfo = liftAlloc $ allocaBytes #{size pjsua_call_info}
 
 foreign import ccall "pjsua_call_get_info" getCallInfo
     :: CallId
     -> Ptr CallInfo
-    -> IO PjStatus
+    -> PjIO PjStatus
 
-getAccountId :: Ptr CallInfo -> IO AccountId
-getAccountId = #{peek pjsua_call_info, acc_id}
+getAccountId :: Ptr CallInfo -> PjIO AccountId
+getAccountId = liftIO . #{peek pjsua_call_info, acc_id}
 
 data CallState
     = Null -- ^ Before INVITE is sent or received
@@ -81,8 +84,8 @@ instance Enum CallState where
     toEnum unmatched =
         error ("CallState toEnum error with: " <> show unmatched)
 
-getCallState :: Ptr CallInfo -> IO CallState
+getCallState :: Ptr CallInfo -> PjIO CallState
 getCallState callInfo = (toEnum . fromIntegral) <$> c_getCallState callInfo
 
-c_getCallState :: Ptr CallInfo -> IO CInt
-c_getCallState = #{peek pjsua_call_info, state}
+c_getCallState :: Ptr CallInfo -> PjIO CInt
+c_getCallState = liftIO . #{peek pjsua_call_info, state}

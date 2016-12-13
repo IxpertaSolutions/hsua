@@ -17,13 +17,12 @@ module Phone.Internal.FFI.CallManipulation
 import Foreign.C.Types (CInt(CInt), CUInt(CUInt))
 import Foreign.Ptr (Ptr)
 
-import System.IO (IO)
-
 import Phone.Internal.FFI.Account (AccountId(AccountId))
 import Phone.Internal.FFI.Common
     ( CallId(CallId)
     , CallSetting
     , MsgData
+    , PjIO(PjIO)
     , PjStatus(PjStatus)
     , Reason
     , UserData
@@ -50,7 +49,7 @@ foreign import ccall "pjsua_call_answer" answerCall
     -- the default phrase will be used.
     -> Ptr MsgData
     -- ^ Optional list of headers to be added to SIP msg.
-    -> IO PjStatus
+    -> PjIO PjStatus
 
 -- | Hangup call by using method that is appropriate according to the call
 -- state. This function is different than answering the call with 3xx-6xx
@@ -66,7 +65,7 @@ foreign import ccall "pjsua_call_hangup" hangupCall
     --   header. If null, the default phrase will be used.
     -> Ptr MsgData
     -- ^ Optional list of headers to be added to SIP msg.
-    -> IO PjStatus
+    -> PjIO PjStatus
 
 -- | Make call to specified URI.
 foreign import ccall "pjsua_call_make_call" makeCall
@@ -84,8 +83,8 @@ foreign import ccall "pjsua_call_make_call" makeCall
     -> Ptr CallId
     -- ^ Optional ('nullPtr') Pointer to CallId where the call id will be
     -- stored.
-    -> IO PjStatus
+    -> PjIO PjStatus
 
 -- | Terminate (end) all calls. In other words this will call 'callHangup' to
 -- all currently active calls.
-foreign import ccall "pjsua_call_hangup_all" hangupAll :: IO ()
+foreign import ccall "pjsua_call_hangup_all" hangupAll :: PjIO ()

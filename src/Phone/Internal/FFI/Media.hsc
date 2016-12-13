@@ -18,23 +18,27 @@ module Phone.Internal.FFI.Media
 
 #include <pjsua-lib/pjsua.h>
 
-import Data.Function (($))
+import Data.Function (($), (.))
 import Foreign.C.Types (CUInt)
 import Foreign.Marshal.Alloc (allocaBytes)
 import Foreign.Ptr (Ptr)
 import Foreign.Storable (pokeByteOff)
-import System.IO (IO)
+
+import Control.Monad.IO.Class (liftIO)
+
+import Phone.Internal.FFI.Common (PjIO(PjIO), liftAlloc)
 
 
 data MediaConfig
 
-withMediaConfig :: (Ptr MediaConfig -> IO a) -> IO a
-withMediaConfig f = allocaBytes #{size pjsua_media_config} $ \cfg -> do
-    defaultMediaConfig cfg
-    f cfg
+withMediaConfig :: (Ptr MediaConfig -> PjIO a) -> PjIO a
+withMediaConfig f =
+    liftAlloc (allocaBytes #{size pjsua_media_config}) $ \cfg -> do
+        defaultMediaConfig cfg
+        f cfg
 
 foreign import ccall "pjsua_media_config_default" defaultMediaConfig
-    :: Ptr MediaConfig -> IO ()
+    :: Ptr MediaConfig -> PjIO ()
 
-setMediaConfigClockRate :: Ptr MediaConfig -> CUInt -> IO ()
-setMediaConfigClockRate = #{poke pjsua_media_config, clock_rate}
+setMediaConfigClockRate :: Ptr MediaConfig -> CUInt -> PjIO ()
+setMediaConfigClockRate = (liftIO .) . #{poke pjsua_media_config, clock_rate}

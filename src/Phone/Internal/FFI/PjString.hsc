@@ -37,7 +37,8 @@ import Foreign.Storable
     , peekByteOff
     , pokeByteOff
     )
-import System.IO (IO)
+
+import Phone.Internal.FFI.Common (PjIO, liftAlloc)
 
 
 data PjString = PjString CString CLong
@@ -55,8 +56,9 @@ instance Storable PjString where
 pjStringFromCStringLen :: CStringLen -> PjString
 pjStringFromCStringLen (p, l) = PjString p (fromIntegral l)
 
-withPjString :: String -> (PjString -> IO a) -> IO a
-withPjString str f = withCStringLen str $ f . pjStringFromCStringLen
+withPjString :: String -> (PjString -> PjIO a) -> PjIO a
+withPjString str f =
+    liftAlloc (withCStringLen str) $ f . pjStringFromCStringLen
 
-withPjStringPtr :: String -> (Ptr PjString -> IO a) -> IO a
-withPjStringPtr str f = withPjString str (`with` f)
+withPjStringPtr :: String -> (Ptr PjString -> PjIO a) -> PjIO a
+withPjStringPtr str f = withPjString str $ \pjStr -> liftAlloc (with pjStr) f

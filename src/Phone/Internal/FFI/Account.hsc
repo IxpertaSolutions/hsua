@@ -44,10 +44,11 @@ import Foreign.C.Types (CInt(CInt))
 import Foreign.Marshal.Alloc (allocaBytes)
 import Foreign.Ptr (Ptr, plusPtr)
 import Foreign.Storable (Storable, peekByteOff, pokeByteOff)
-import System.IO (IO)
 import Text.Show (Show)
 
-import Phone.Internal.FFI.Common (PjStatus(PjStatus))
+import Control.Monad.IO.Class (liftIO)
+
+import Phone.Internal.FFI.Common (PjIO(PjIO), PjStatus(PjStatus), liftAlloc)
 import Phone.Internal.FFI.PjString (PjString)
 
 
@@ -56,47 +57,54 @@ data AccountConfig
 data AccountInfo
 data CredInfo
 
-withAccountConfig :: (Ptr AccountConfig -> IO a) -> IO a
-withAccountConfig f = allocaBytes #{size pjsua_acc_config} $ \cfg -> do
-    defaultAccountConfig cfg
-    f cfg
+withAccountConfig :: (Ptr AccountConfig -> PjIO a) -> PjIO a
+withAccountConfig f =
+    liftAlloc (allocaBytes #{size pjsua_acc_config}) $ \cfg -> do
+        defaultAccountConfig cfg
+        f cfg
 
 foreign import ccall "pjsua_acc_config_default" defaultAccountConfig
-    :: Ptr AccountConfig -> IO ()
+    :: Ptr AccountConfig -> PjIO ()
 
-setAccountId :: Ptr AccountConfig -> PjString -> IO ()
-setAccountId = #{poke pjsua_acc_config, id}
+setAccountId :: Ptr AccountConfig -> PjString -> PjIO ()
+setAccountId = (liftIO .) . #{poke pjsua_acc_config, id}
 
-setAccountRegUri :: Ptr AccountConfig -> PjString -> IO ()
-setAccountRegUri = #{poke pjsua_acc_config, reg_uri}
+setAccountRegUri :: Ptr AccountConfig -> PjString -> PjIO ()
+setAccountRegUri = (liftIO .) . #{poke pjsua_acc_config, reg_uri}
 
-setAccountCredCount :: Ptr AccountConfig -> CInt -> IO ()
-setAccountCredCount = #{poke pjsua_acc_config, cred_count}
+setAccountCredCount :: Ptr AccountConfig -> CInt -> PjIO ()
+setAccountCredCount = (liftIO .) . #{poke pjsua_acc_config, cred_count}
 
 credInfo :: Ptr AccountConfig -> Int -> Ptr CredInfo
 credInfo cfg i = #{ptr pjsua_acc_config, cred_info} cfg
     `plusPtr` (i * #{size pjsip_cred_info})
 
-setAccountRealm :: Ptr AccountConfig -> Int -> PjString -> IO ()
-setAccountRealm cfg = #{poke pjsip_cred_info, realm} . credInfo cfg
+setAccountRealm :: Ptr AccountConfig -> Int -> PjString -> PjIO ()
+setAccountRealm cfg =
+    (liftIO .) . #{poke pjsip_cred_info, realm} . credInfo cfg
 
-setAccountScheme :: Ptr AccountConfig -> Int -> PjString -> IO ()
-setAccountScheme cfg = #{poke pjsip_cred_info, scheme} . credInfo cfg
+setAccountScheme :: Ptr AccountConfig -> Int -> PjString -> PjIO ()
+setAccountScheme cfg =
+    (liftIO .) . #{poke pjsip_cred_info, scheme} . credInfo cfg
 
-setAccountUsername :: Ptr AccountConfig -> Int -> PjString -> IO ()
-setAccountUsername cfg = #{poke pjsip_cred_info, username} . credInfo cfg
+setAccountUsername :: Ptr AccountConfig -> Int -> PjString -> PjIO ()
+setAccountUsername cfg =
+    (liftIO .) . #{poke pjsip_cred_info, username} . credInfo cfg
 
 credDataPlainPasswd :: CInt
 credDataPlainPasswd = #{const PJSIP_CRED_DATA_PLAIN_PASSWD}
 
-setAccountDataType :: Ptr AccountConfig -> Int -> CInt -> IO ()
-setAccountDataType cfg = #{poke pjsip_cred_info, data_type} . credInfo cfg
+setAccountDataType :: Ptr AccountConfig -> Int -> CInt -> PjIO ()
+setAccountDataType cfg =
+    (liftIO .) . #{poke pjsip_cred_info, data_type} . credInfo cfg
 
-setAccountData :: Ptr AccountConfig -> Int -> PjString -> IO ()
-setAccountData cfg = #{poke pjsip_cred_info, data} . credInfo cfg
+setAccountData :: Ptr AccountConfig -> Int -> PjString -> PjIO ()
+setAccountData cfg =
+    (liftIO .) . #{poke pjsip_cred_info, data} . credInfo cfg
 
-setAccountRegisterOnAdd :: Ptr AccountConfig -> CInt -> IO ()
-setAccountRegisterOnAdd = #{poke pjsua_acc_config, register_on_acc_add}
+setAccountRegisterOnAdd :: Ptr AccountConfig -> CInt -> PjIO ()
+setAccountRegisterOnAdd =
+    (liftIO .) . #{poke pjsua_acc_config, register_on_acc_add}
 
 -- | Update registration or perform unregistration. If registration is
 -- configured for this account, then initial SIP REGISTER will be sent when the
@@ -109,7 +117,7 @@ foreign import ccall "pjsua_acc_set_registration" setAccountRegistration
     :: AccountId
     -> CInt
     -- ^ pj_bool_t --> _zero_ = false, _non-zero_ = _true_
-    -> IO PjStatus
+    -> PjIO PjStatus
 
 
 -- | Add a new account to hsua (pjsua). If registration is configured for this
@@ -128,23 +136,23 @@ foreign import ccall "pjsua_acc_add" setAccount
     -- recommended that default account is set to local/LAN account.
     -> Ptr AccountId
     -- ^ Pointer to receive account ID of the new account.
-    -> IO PjStatus
+    -> PjIO PjStatus
 
 -- | This will unregister the account from the SIP server, if necessary, and
 -- terminate server side presence subscriptions associated with this account.
 foreign import ccall "pjsua_acc_del" removeAccount
     :: AccountId
-    -> IO PjStatus
+    -> PjIO PjStatus
 
 foreign import ccall "pjsua_acc_get_info" getAccountInfo
-    :: AccountId -> Ptr AccountInfo -> IO ()
+    :: AccountId -> Ptr AccountInfo -> PjIO ()
 
-withAccountInfo :: (Ptr AccountInfo -> IO a) -> IO a
-withAccountInfo = allocaBytes #{size pjsua_acc_info}
+withAccountInfo :: (Ptr AccountInfo -> PjIO a) -> PjIO a
+withAccountInfo = liftAlloc $ allocaBytes #{size pjsua_acc_info}
 
-isAccountRegistered :: AccountId -> IO Bool
+isAccountRegistered :: AccountId -> PjIO Bool
 isAccountRegistered a = withAccountInfo $ \info -> do
     getAccountInfo a info
-    status <- #{peek pjsua_acc_info, status} info
-    expires <- #{peek pjsua_acc_info, expires} info
+    status <- liftIO $ #{peek pjsua_acc_info, status} info
+    expires <- liftIO $ #{peek pjsua_acc_info, expires} info
     pure $ (status :: CInt) >= 200 && status < 300 && (expires :: CInt) > 0

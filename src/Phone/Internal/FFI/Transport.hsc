@@ -22,24 +22,26 @@ module Phone.Internal.FFI.Transport
 
 #include <pjsua-lib/pjsua.h>
 
+import Data.Function (($), (.))
 import Foreign.C.Types (CInt(CInt), CUInt)
 import Foreign.Marshal.Alloc (allocaBytes)
 import Foreign.Ptr (Ptr)
 import Foreign.Storable (Storable, pokeByteOff)
-import System.IO (IO)
 
-import Phone.Internal.FFI.Common (PjStatus(PjStatus))
+import Control.Monad.IO.Class (liftIO)
+
+import Phone.Internal.FFI.Common (PjIO(PjIO), PjStatus(PjStatus), liftAlloc)
 
 
 data TransportConfig
 data TransportId
 newtype TransportType = TransportType CInt deriving Storable
 
-withTransportConfig :: (Ptr TransportConfig -> IO a) -> IO a
-withTransportConfig = allocaBytes #{size pjsua_transport_config}
+withTransportConfig :: (Ptr TransportConfig -> PjIO a) -> PjIO a
+withTransportConfig = liftAlloc $ allocaBytes #{size pjsua_transport_config}
 
-setTransportPort :: Ptr TransportConfig -> CUInt -> IO ()
-setTransportPort = #{poke pjsua_transport_config, port}
+setTransportPort :: Ptr TransportConfig -> CUInt -> PjIO ()
+setTransportPort = (liftIO .) . #{poke pjsua_transport_config, port}
 
 #{enum TransportType, TransportType,
     udpTransport = PJSIP_TRANSPORT_UDP,
@@ -47,7 +49,7 @@ setTransportPort = #{poke pjsua_transport_config, port}
 }
 
 foreign import ccall "pjsua_transport_create" createTransport
-    :: TransportType -> Ptr TransportConfig -> Ptr TransportId -> IO PjStatus
+    :: TransportType -> Ptr TransportConfig -> Ptr TransportId -> PjIO PjStatus
 
 -- data TransportType =
 --     Unspecified

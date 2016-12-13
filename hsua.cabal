@@ -32,6 +32,7 @@ library
     Phone.Call
     Phone.Exception
     Phone.Handlers
+    Phone.MonadPJ
     Phone.Run
   other-modules:
     Phone.Internal.FFI
@@ -44,6 +45,7 @@ library
     Phone.Internal.FFI.Media
     Phone.Internal.FFI.PjString
     Phone.Internal.FFI.Transport
+    Phone.Internal.Thread
     Phone.Internal.Utils
   c-sources:
     cbits/pjsua_device.c
@@ -51,12 +53,15 @@ library
   build-depends:
     base >=4.8 && <5
     , text
+    , transformers >=0.4 && <0.6
+    , exceptions ==0.8.*
 
   ghc-options:
     -Wall
     -fwarn-tabs
     -fwarn-missing-import-lists
     -fwarn-implicit-prelude
+    -threaded
 
   if flag(pedantic)
     ghc-options:        -Werror
@@ -80,15 +85,19 @@ executable test
     Phone.Internal.FFI.Media
     Phone.Internal.FFI.PjString
     Phone.Internal.FFI.Transport
+    Phone.Internal.Thread
     Phone.Internal.Utils
   build-depends:
     base >=4.8 && <5
     , hsua
+    , transformers >=0.4 && <0.6
+    , exceptions ==0.8.*
   ghc-options:
     -Wall
     -fwarn-tabs
     -fwarn-missing-import-lists
     -fwarn-implicit-prelude
+    -threaded
 
 executable example
   hs-source-dirs:       example
@@ -102,11 +111,13 @@ executable example
   build-depends:
     base >=4.8 && <5
     , hsua
+    , transformers >=0.4 && <0.6
   ghc-options:
     -Wall
     -fwarn-tabs
     -fwarn-missing-import-lists
     -fwarn-implicit-prelude
+    -threaded
 
   if flag(pedantic)
     ghc-options:        -Werror

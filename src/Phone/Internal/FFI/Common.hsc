@@ -10,16 +10,57 @@
 -- Stability:    experimental
 -- Portability:  GHC specific language extensions.
 module Phone.Internal.FFI.Common
+    ( CallId(CallId)
+    , CallSetting
+    , MsgData
+    , PjIO(PjIO)
+    , PjStatus(PjStatus)
+    , Reason
+    , RxData
+    , SipEvent
+    , UserData
+    , liftAlloc
+    , pjFalse
+    , pjSuccess
+    , pjTrue
+    , runPjIO
+    )
   where
 
+import Control.Applicative (Applicative)
+import Control.Monad (Monad)
 import Data.Eq (Eq)
+import Data.Function ((.))
+import Data.Functor (Functor)
 import Foreign.C.Types (CInt)
 import Foreign.Storable (Storable)
+import System.IO (IO)
+import Text.Show (Show)
+
+import Control.Monad.Catch (MonadCatch, MonadMask, MonadThrow)
+import Control.Monad.IO.Class (MonadIO, liftIO)
+
+import Phone.Internal.Thread (execInBoundWorker)
 
 #include <pjsua-lib/pjsua.h>
 
-import Text.Show (Show)
 
+newtype PjIO a = PjIO { unsafeRunPjIO :: IO a }
+  deriving
+    ( Functor
+    , Applicative
+    , Monad
+    , MonadIO
+    , MonadThrow
+    , MonadCatch
+    , MonadMask
+    )
+
+runPjIO :: PjIO a -> IO a
+runPjIO = execInBoundWorker . unsafeRunPjIO
+
+liftAlloc :: ((a -> IO b) -> IO b) -> ((a -> PjIO b) -> PjIO b)
+liftAlloc f = liftIO . f . (unsafeRunPjIO .)
 
 data CallSetting
 data MsgData

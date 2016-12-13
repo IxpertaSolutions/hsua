@@ -16,22 +16,23 @@ module Phone.Account
     , AuthScheme(..)
     , WhenRegister(..)
     , createAccount
-    , FFI.isAccountRegistered
+    , isAccountRegistered
     , mkSimpleAccount
-    , FFI.removeAccount
+    , removeAccount
     , registerAccount
     , unregisterAccount
     )
   where
 
 import Control.Monad ((>>=))
-import Data.Function (($))
+import Data.Bool (Bool)
+import Data.Function (($), (.))
 import Data.Monoid ((<>))
 import Foreign.Marshal.Alloc (alloca)
 import Foreign.Storable (peek)
-import System.IO (IO)
 import Text.Show (Show)
 
+import Control.Monad.IO.Class (liftIO)
 import Data.Text (Text)
 import qualified Data.Text as T (unpack)
 
@@ -39,9 +40,11 @@ import Phone.Exception
     ( PhoneException
         ( CreateAccount
         , Registration
+        , RemoveAccount
         , Unregistration
         )
     )
+import Phone.MonadPJ (MonadPJ(liftPJ))
 import Phone.Internal.FFI.Account (AccountId)
 import qualified Phone.Internal.FFI.Account as FFI
     ( credDataPlainPasswd
@@ -60,7 +63,11 @@ import qualified Phone.Internal.FFI.Account as FFI
     , setAccountUsername
     , withAccountConfig
     )
-import qualified Phone.Internal.FFI.Common as FFI (pjFalse, pjTrue)
+import qualified Phone.Internal.FFI.Common as FFI
+    ( pjFalse
+    , pjTrue
+    , liftAlloc
+    )
 import qualified Phone.Internal.FFI.PjString as FFI (withPjString)
 import qualified Phone.Internal.Utils as FFI (check)
 
@@ -97,8 +104,8 @@ mkSimpleAccount server user password = Account
     , password = password
     }
 
-createAccount :: WhenRegister -> Account -> IO AccountId
-createAccount whenReg Account{..} =
+createAccount :: MonadPJ m => WhenRegister -> Account -> m AccountId
+createAccount whenReg Account{..} = liftPJ $
     FFI.withPjString (T.unpack accountId) $ \accountIdPjStr ->
     FFI.withPjString (T.unpack registrationUri) $ \registrationUriPjStr ->
     FFI.withPjString (T.unpack realm) $ \realmPjStr ->
@@ -115,9 +122,9 @@ createAccount whenReg Account{..} =
         FFI.setAccountDataType accCfg 0 FFI.credDataPlainPasswd
         FFI.setAccountData accCfg 0 passwordPjStr
         FFI.setAccountRegisterOnAdd accCfg $ toVal whenReg
-        alloca $ \accId -> do
+        FFI.liftAlloc alloca $ \accId -> do
             FFI.setAccount accCfg FFI.pjTrue accId >>= FFI.check CreateAccount
-            peek accId
+            liftIO $ peek accId
   where
     toVal Now = FFI.pjTrue
     toVal Later = FFI.pjFalse
@@ -125,11 +132,17 @@ createAccount whenReg Account{..} =
     schemeText Digest = "digest"
     schemeText Basic = "basic"
 
-registerAccount :: AccountId -> IO ()
-registerAccount accId =
+registerAccount :: MonadPJ m => AccountId -> m ()
+registerAccount accId = liftPJ $
     FFI.setAccountRegistration accId FFI.pjTrue >>= FFI.check Registration
 
-unregisterAccount :: AccountId -> IO ()
-unregisterAccount accId =
+unregisterAccount :: MonadPJ m => AccountId -> m ()
+unregisterAccount accId = liftPJ $
     FFI.setAccountRegistration accId FFI.pjFalse >>= FFI.check Unregistration
 
+isAccountRegistered :: MonadPJ m => AccountId -> m Bool
+isAccountRegistered = liftPJ . FFI.isAccountRegistered
+
+removeAccount :: MonadPJ m => AccountId -> m ()
+removeAccount accId = liftPJ $
+    FFI.removeAccount accId >>= FFI.check RemoveAccount

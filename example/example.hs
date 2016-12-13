@@ -3,11 +3,13 @@
 module Main where
 
 import Control.Concurrent (threadDelay)
-import Data.Function (($))
+import Data.Function (($), (.))
 import Data.Maybe (Maybe (Just, Nothing))
 import Data.Monoid ((<>))
 import System.IO (IO, putStrLn)
 import Text.Show (show)
+
+import Control.Monad.IO.Class (liftIO)
 
 import Phone.Account
     ( Account
@@ -40,18 +42,19 @@ import Phone.Handlers
     , onRegistrationStarted
     , onRegistrationStateChange
     )
+import Phone.MonadPJ (PjIO)
 import Phone.Run (setNullSndDev, withPhone)
 
 
-incomingCallHandler :: AccountId -> CallId -> IO ()
+incomingCallHandler :: AccountId -> CallId -> PjIO ()
 incomingCallHandler _ callId = do
     res <- answerCall callId 200
-    putStrLn $ "call accept result: " <> show res
+    liftIO . putStrLn $ "call accept result: " <> show res
 
-onRegistrationHandler :: AccountId -> IO ()
+onRegistrationHandler :: AccountId -> PjIO ()
 onRegistrationHandler id = do
     r <- isAccountRegistered id
-    putStrLn $ "is account registred: " <> show r
+    liftIO . putStrLn $ "is account registred: " <> show r
 
 main :: IO ()
 main = withPhone handlers $ do

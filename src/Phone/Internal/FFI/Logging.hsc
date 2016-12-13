@@ -21,34 +21,37 @@ module Phone.Internal.FFI.Logging
 
 #include <pjsua-lib/pjsua.h>
 
-import Data.Function (($))
+import Data.Function (($), (.))
 import Foreign.C.Types (CInt, CUInt)
 import Foreign.Ptr (Ptr)
 import Foreign.Marshal.Alloc (allocaBytes)
 import Foreign.Storable (pokeByteOff)
-import System.IO (IO)
 
+import Control.Monad.IO.Class (liftIO)
+
+import Phone.Internal.FFI.Common (PjIO(PjIO), liftAlloc)
 import Phone.Internal.FFI.PjString (PjString)
 
 
 data LoggingConfig
 
-withLoggingConfig :: (Ptr LoggingConfig -> IO a) -> IO a
-withLoggingConfig f = allocaBytes #{size pjsua_logging_config} $ \cfg -> do
-    defaultLoggingConfig cfg
-    f cfg
+withLoggingConfig :: (Ptr LoggingConfig -> PjIO a) -> PjIO a
+withLoggingConfig f =
+    liftAlloc (allocaBytes #{size pjsua_logging_config}) $ \cfg -> do
+        defaultLoggingConfig cfg
+        f cfg
 
 foreign import ccall "pjsua_logging_config_default" defaultLoggingConfig
-    :: Ptr LoggingConfig -> IO ()
+    :: Ptr LoggingConfig -> PjIO ()
 
-setConsoleLevel :: Ptr LoggingConfig -> CUInt -> IO ()
-setConsoleLevel = #{poke pjsua_logging_config, console_level}
+setConsoleLevel :: Ptr LoggingConfig -> CUInt -> PjIO ()
+setConsoleLevel = (liftIO .) . #{poke pjsua_logging_config, console_level}
 
-setLevel :: Ptr LoggingConfig -> CUInt -> IO ()
-setLevel = #{poke pjsua_logging_config, level}
+setLevel :: Ptr LoggingConfig -> CUInt -> PjIO ()
+setLevel = (liftIO .) . #{poke pjsua_logging_config, level}
 
-setMsgLogging :: Ptr LoggingConfig -> CInt -> IO ()
-setMsgLogging = #{poke pjsua_logging_config, msg_logging}
+setMsgLogging :: Ptr LoggingConfig -> CInt -> PjIO ()
+setMsgLogging = (liftIO .) . #{poke pjsua_logging_config, msg_logging}
 
-setLogFilename :: Ptr LoggingConfig -> PjString -> IO ()
-setLogFilename = #{poke pjsua_logging_config, log_filename}
+setLogFilename :: Ptr LoggingConfig -> PjString -> PjIO ()
+setLogFilename = (liftIO .) . #{poke pjsua_logging_config, log_filename}

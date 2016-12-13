@@ -9,11 +9,11 @@
 -- Stability:    experimental
 -- Portability:  GHC specific language extensions.
 module Phone.Call
-    ( CallId
+    ( FFI.CallId
     , FFI.CallState(..)
     , CallInfo(..)
     , answerCall
-    , FFI.hangupAll
+    , hangupAll
     , hangupCall
     , makeCall
     , getCallInfo
@@ -24,15 +24,15 @@ import Prelude (fromIntegral)
 
 import Control.Applicative (Applicative((<*>)))
 import Control.Monad ((>>=))
-import Data.Function (($))
+import Data.Function (($), (.))
 import Data.Functor ((<$>))
 import Data.Int (Int)
 import Foreign.Marshal.Alloc (alloca)
 import Foreign.Ptr (nullPtr)
 import Foreign.Storable (peek)
-import System.IO (IO)
 import Text.Show (Show)
 
+import Control.Monad.IO.Class (liftIO)
 import Data.Text (Text)
 import qualified Data.Text as T (unpack)
 
@@ -44,7 +44,8 @@ import Phone.Exception
         , MakeCall
         )
     )
-import Phone.Internal.FFI.Account (AccountId)
+import Phone.MonadPJ (MonadPJ(liftPJ))
+import qualified Phone.Internal.FFI.Account as FFI (AccountId)
 import qualified Phone.Internal.FFI.CallInfo as FFI
     ( CallState
         ( Calling
@@ -66,43 +67,49 @@ import qualified Phone.Internal.FFI.CallManipulation as FFI
     , hangupCall
     , makeCall
     )
-import Phone.Internal.FFI.Common (CallId)
-import Phone.Internal.FFI.PjString (withPjStringPtr)
-import Phone.Internal.Utils (check)
+import qualified Phone.Internal.FFI.Common as FFI (CallId, liftAlloc)
+import qualified Phone.Internal.FFI.PjString as FFI (withPjStringPtr)
+import qualified Phone.Internal.Utils as FFI (check)
 
 
 data CallInfo = CallInfo
-    { accountId :: AccountId
+    { accountId :: FFI.AccountId
     , callState :: FFI.CallState
     }
   deriving (Show)
 
-getCallInfo :: CallId -> IO CallInfo
-getCallInfo callId = FFI.withCallInfo $ \info -> do
-    FFI.getCallInfo callId info >>= check GetCallInfo
+getCallInfo :: MonadPJ m => FFI.CallId -> m CallInfo
+getCallInfo callId = liftPJ . FFI.withCallInfo $ \info -> do
+    FFI.getCallInfo callId info >>= FFI.check GetCallInfo
     CallInfo <$> FFI.getAccountId info <*> FFI.getCallState info
 
 answerCall
-    :: CallId
+    :: MonadPJ m
+    => FFI.CallId
     -> Int
     -- ^ Status code to be used to answer the call.
-    -> IO ()
-answerCall callId status =
+    -> m ()
+answerCall callId status = liftPJ $
     FFI.answerCall callId (fromIntegral status) nullPtr nullPtr
-    >>= check AnswerCall
+    >>= FFI.check AnswerCall
 
 hangupCall
-    :: CallId
+    :: MonadPJ m
+    => FFI.CallId
     -> Int
     -- ^ Status code to be used to answer the call.
-    -> IO ()
-hangupCall callId status =
+    -> m ()
+hangupCall callId status = liftPJ $
     FFI.hangupCall callId (fromIntegral status) nullPtr nullPtr
-    >>= check HangupCall
+    >>= FFI.check HangupCall
 
-makeCall :: AccountId -> Text -> IO CallId
-makeCall accId url =
-    withPjStringPtr (T.unpack url) $ \urlPjStr ->
-    alloca $ \callId -> do
-        FFI.makeCall accId urlPjStr nullPtr nullPtr nullPtr callId >>= check MakeCall
-        peek callId
+makeCall :: MonadPJ m => FFI.AccountId -> Text -> m FFI.CallId
+makeCall accId url = liftPJ $
+    FFI.withPjStringPtr (T.unpack url) $ \urlPjStr ->
+    FFI.liftAlloc alloca $ \callId -> do
+        FFI.makeCall accId urlPjStr nullPtr nullPtr nullPtr callId
+            >>= FFI.check MakeCall
+        liftIO $ peek callId
+
+hangupAll :: MonadPJ m => m ()
+hangupAll = liftPJ FFI.hangupAll
