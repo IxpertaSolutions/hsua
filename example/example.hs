@@ -4,12 +4,13 @@ module Main where
 
 import Control.Concurrent (threadDelay)
 import Data.Function (($), (.))
-import Data.Maybe (Maybe (Just, Nothing))
+import Data.Maybe (Maybe(Just))
 import Data.Monoid ((<>))
 import System.IO (IO, putStrLn)
 import Text.Show (show)
 
 import Control.Monad.IO.Class (liftIO)
+import Data.Default (def)
 
 import Phone.Account
     ( Account
@@ -32,14 +33,9 @@ import Phone.Account
     , userName
     )
 import Phone.Call (CallId, answerCall, hangupAll, makeCall)
-import Phone.Handlers
-    ( Handlers
-        ( Handlers
-        )
-    , onCallStateChange
+import Phone.Config
+    ( Config(handlers)
     , onIncomingCall
-    , onMediaStateChange
-    , onRegistrationStarted
     , onRegistrationStateChange
     )
 import Phone.MonadPJ (PjIO)
@@ -57,7 +53,7 @@ onRegistrationHandler id = do
     liftIO . putStrLn $ "is account registred: " <> show r
 
 main :: IO ()
-main = withPhone handlers $ do
+main = withPhone config $ do
     accId <- createAccount Now Account
         { accountId = "sip:123@10.0.0.1"
         , registrationUri = "sip:10.0.0.1"
@@ -75,10 +71,9 @@ main = withPhone handlers $ do
     threadDelay 10000000
     hangupAll
   where
-    handlers = Handlers
-        { onCallStateChange = Nothing
-        , onIncomingCall = Just incomingCallHandler
-        , onRegistrationStateChange = Just onRegistrationHandler
-        , onRegistrationStarted = Nothing
-        , onMediaStateChange = Nothing
+    config = def
+        { handlers = def
+            { onIncomingCall = Just incomingCallHandler
+            , onRegistrationStateChange = Just onRegistrationHandler
+            }
         }

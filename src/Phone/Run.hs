@@ -22,28 +22,41 @@ import Control.Applicative (pure)
 import Control.Exception (bracket_)
 import Control.Monad ((>=>), (>>=), void)
 import Data.Function (($), (.))
-import Data.Maybe (maybe)
+import Data.Maybe (Maybe(Just, Nothing), maybe)
+import Foreign.Marshal.Utils (fromBool)
 import Foreign.Ptr (nullPtr)
 import System.IO (IO)
 
 import Control.Monad.IO.Class (liftIO)
 
-import Phone.Exception
-    ( PhoneException
-        ( CreateLib
-        , Initialization
-        , Start
-        , Transport
+import Phone.Config
+    ( Config
+        ( Config
+        , handlers
+        , logging
         )
-    )
-import Phone.Handlers
-    ( Handlers
+    , Handlers
         ( Handlers
         , onCallStateChange
         , onIncomingCall
         , onMediaStateChange
         , onRegistrationStarted
         , onRegistrationStateChange
+        )
+    , Logging
+        ( Logging
+        , logLevel
+        , logConsoleLevel
+        , logMsgLogging
+        , logFilename
+        )
+    )
+import Phone.Exception
+    ( PhoneException
+        ( CreateLib
+        , Initialization
+        , Start
+        , Transport
         )
     )
 import Phone.MonadPJ (MonadPJ(liftPJ))
@@ -55,7 +68,6 @@ import qualified Phone.Internal.FFI as FFI
     , codecSetPriority
     )
 import qualified Phone.Internal.FFI.CallManipulation as FFI (hangupAll)
-import qualified Phone.Internal.FFI.Common as FFI (pjFalse)
 import qualified Phone.Internal.FFI.Configuration as FFI
     ( initializePjSua
     , setOnCallStateCallback
@@ -71,10 +83,11 @@ import qualified Phone.Internal.FFI.Configuration as FFI
     , withPjConfig
     )
 import qualified Phone.Internal.FFI.Logging as FFI
-    ( withLoggingConfig
+    ( setConsoleLevel
+    , setLevel
     , setLogFilename
     , setMsgLogging
-    -- , setConsoleLevel
+    , withLoggingConfig
     )
 import qualified Phone.Internal.FFI.Media as FFI
     ( withMediaConfig
@@ -91,27 +104,30 @@ import qualified Phone.Internal.FFI.Transport as FFI
     )
 import qualified Phone.Internal.Utils as FFI (check)
 
-withPhone :: Handlers -> IO () -> IO ()
-withPhone Handlers{..} = bracket_ initSeq deinitSeq
+withPhone :: Config -> IO () -> IO ()
+withPhone Config{..} = bracket_ initSeq deinitSeq
   where
+    Handlers{..} = handlers
+    Logging{..} = logging
+
     initSeq = liftPJ $ do
         FFI.createPjSua >>= FFI.check CreateLib
         FFI.withPjConfig $ \pjCfg -> do
-            maybeHandler onCallStateChange
-                (liftIO . FFI.toOnCallState . onCallState
-                >=> FFI.setOnCallStateCallback pjCfg)
-            maybeHandler onIncomingCall
-                (liftIO . FFI.toOnIncomingCall . onIncCall
-                >=> FFI.setOnIncomingCallCallback pjCfg)
-            maybeHandler onRegistrationStateChange
-                (liftIO . FFI.toOnRegistrationState
-                >=> FFI.setOnRegistrationStateCallback pjCfg)
-            maybeHandler onRegistrationStarted
-                (liftIO . FFI.toOnRegistrationStarted . onRegStarted
-                >=> FFI.setOnRegistrationStartedCallback pjCfg)
-            maybeHandler onMediaStateChange
-                (liftIO . FFI.toOnMediaState
-                >=> FFI.setOnMediaStateCallback pjCfg)
+            whenJust onCallStateChange
+                $ liftIO . FFI.toOnCallState . onCallState
+                >=> FFI.setOnCallStateCallback pjCfg
+            whenJust onIncomingCall
+                $ liftIO . FFI.toOnIncomingCall . onIncCall
+                >=> FFI.setOnIncomingCallCallback pjCfg
+            whenJust onRegistrationStateChange
+                $ liftIO . FFI.toOnRegistrationState
+                >=> FFI.setOnRegistrationStateCallback pjCfg
+            whenJust onRegistrationStarted
+                $ liftIO . FFI.toOnRegistrationStarted . onRegStarted
+                >=> FFI.setOnRegistrationStartedCallback pjCfg
+            whenJust onMediaStateChange
+                $ liftIO . FFI.toOnMediaState
+                >=> FFI.setOnMediaStateCallback pjCfg
             withLog $ \logCfg ->
                 withMedia $ \mediaCfg ->
                     FFI.initializePjSua pjCfg logCfg mediaCfg
@@ -123,10 +139,12 @@ withPhone Handlers{..} = bracket_ initSeq deinitSeq
         setCodecs
 
     withLog f =
-        FFI.withPjString "pjsua_log.txt" $ \logFile -> -- FIXME: hardcoded
+        withMaybePjString logFilename $ \logFile ->
         FFI.withLoggingConfig $ \logCfg -> do
-            FFI.setMsgLogging logCfg FFI.pjFalse
-            FFI.setLogFilename logCfg logFile
+            whenJust logMsgLogging $ FFI.setMsgLogging logCfg . fromBool
+            whenJust logLevel $ FFI.setLevel logCfg . fromIntegral
+            whenJust logConsoleLevel $ FFI.setConsoleLevel logCfg . fromIntegral
+            whenJust logFile $ FFI.setLogFilename logCfg
             f logCfg
 
     withMedia f =
@@ -151,7 +169,9 @@ withPhone Handlers{..} = bracket_ initSeq deinitSeq
         FFI.hangupAll
         void FFI.destroyPjSua
 
-    maybeHandler m op = maybe (pure ()) op m
+    whenJust m op = maybe (pure ()) op m
+
+    withMaybePjString = maybe ($ Nothing) ((. (. Just)) . FFI.withPjString)
 
 setNullSndDev :: MonadPJ m => m ()
 setNullSndDev = liftPJ FFI.setNullSndDev

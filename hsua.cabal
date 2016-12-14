@@ -30,8 +30,8 @@ library
   exposed-modules:
     Phone.Account
     Phone.Call
+    Phone.Config
     Phone.Exception
-    Phone.Handlers
     Phone.MonadPJ
     Phone.Run
   other-modules:
@@ -52,9 +52,10 @@ library
 
   build-depends:
     base >=4.8 && <5
+    , data-default >= 0.7.1.1 && <0.8
+    , exceptions ==0.8.*
     , text
     , transformers >=0.4 && <0.6
-    , exceptions ==0.8.*
 
   ghc-options:
     -Wall
@@ -89,9 +90,9 @@ executable test
     Phone.Internal.Utils
   build-depends:
     base >=4.8 && <5
+    , exceptions ==0.8.*
     , hsua
     , transformers >=0.4 && <0.6
-    , exceptions ==0.8.*
   ghc-options:
     -Wall
     -fwarn-tabs
@@ -110,6 +111,7 @@ executable example
   -- other-modules:
   build-depends:
     base >=4.8 && <5
+    , data-default >= 0.7.1.1 && <0.8
     , hsua
     , transformers >=0.4 && <0.6
   ghc-options:
