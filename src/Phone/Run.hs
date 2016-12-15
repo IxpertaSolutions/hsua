@@ -11,8 +11,10 @@
 -- Stability:    experimental
 -- Portability:  GHC specific language extensions.
 module Phone.Run
-    ( withPhone
+    ( deinitPhone
+    , initPhone
     , setNullSndDev
+    , withPhone
     )
   where
 
@@ -105,38 +107,39 @@ import qualified Phone.Internal.FFI.Transport as FFI
 import qualified Phone.Internal.Utils as FFI (check)
 
 withPhone :: Config -> IO () -> IO ()
-withPhone Config{..} = bracket_ initSeq deinitSeq
+withPhone cfg = bracket_ (initPhone cfg) deinitPhone
+
+initPhone :: Config -> IO ()
+initPhone Config{..} = liftPJ $ do
+    FFI.createPjSua >>= FFI.check CreateLib
+    FFI.withPjConfig $ \pjCfg -> do
+        whenJust onCallStateChange
+            $ liftIO . FFI.toOnCallState . onCallState
+            >=> FFI.setOnCallStateCallback pjCfg
+        whenJust onIncomingCall
+            $ liftIO . FFI.toOnIncomingCall . onIncCall
+            >=> FFI.setOnIncomingCallCallback pjCfg
+        whenJust onRegistrationStateChange
+            $ liftIO . FFI.toOnRegistrationState
+            >=> FFI.setOnRegistrationStateCallback pjCfg
+        whenJust onRegistrationStarted
+            $ liftIO . FFI.toOnRegistrationStarted . onRegStarted
+            >=> FFI.setOnRegistrationStartedCallback pjCfg
+        whenJust onMediaStateChange
+            $ liftIO . FFI.toOnMediaState
+            >=> FFI.setOnMediaStateCallback pjCfg
+        withLog $ \logCfg ->
+            withMedia $ \mediaCfg ->
+                FFI.initializePjSua pjCfg logCfg mediaCfg
+                >>= FFI.check Initialization
+    FFI.withTransportConfig $ \transportCfg ->
+        FFI.createTransport FFI.udpTransport transportCfg nullPtr
+        >>= FFI.check Transport
+    FFI.pjsuaStart >>= FFI.check Start
+    setCodecs
   where
     Handlers{..} = handlers
     Logging{..} = logging
-
-    initSeq = liftPJ $ do
-        FFI.createPjSua >>= FFI.check CreateLib
-        FFI.withPjConfig $ \pjCfg -> do
-            whenJust onCallStateChange
-                $ liftIO . FFI.toOnCallState . onCallState
-                >=> FFI.setOnCallStateCallback pjCfg
-            whenJust onIncomingCall
-                $ liftIO . FFI.toOnIncomingCall . onIncCall
-                >=> FFI.setOnIncomingCallCallback pjCfg
-            whenJust onRegistrationStateChange
-                $ liftIO . FFI.toOnRegistrationState
-                >=> FFI.setOnRegistrationStateCallback pjCfg
-            whenJust onRegistrationStarted
-                $ liftIO . FFI.toOnRegistrationStarted . onRegStarted
-                >=> FFI.setOnRegistrationStartedCallback pjCfg
-            whenJust onMediaStateChange
-                $ liftIO . FFI.toOnMediaState
-                >=> FFI.setOnMediaStateCallback pjCfg
-            withLog $ \logCfg ->
-                withMedia $ \mediaCfg ->
-                    FFI.initializePjSua pjCfg logCfg mediaCfg
-                    >>= FFI.check Initialization
-        FFI.withTransportConfig $ \transportCfg ->
-            FFI.createTransport FFI.udpTransport transportCfg nullPtr
-            >>= FFI.check Transport
-        FFI.pjsuaStart >>= FFI.check Start
-        setCodecs
 
     withLog f =
         withMaybePjString logFilename $ \logFile ->
@@ -165,13 +168,14 @@ withPhone Config{..} = bracket_ initSeq deinitSeq
     onIncCall f acc callId _ = f acc callId
     onRegStarted f acc p = f acc $ fromIntegral p
 
-    deinitSeq = liftPJ $ do
-        FFI.hangupAll
-        void FFI.destroyPjSua
-
     whenJust m op = maybe (pure ()) op m
 
     withMaybePjString = maybe ($ Nothing) ((. (. Just)) . FFI.withPjString)
+
+deinitPhone :: IO ()
+deinitPhone = liftPJ $ do
+    FFI.hangupAll
+    void FFI.destroyPjSua
 
 setNullSndDev :: MonadPJ m => m ()
 setNullSndDev = liftPJ FFI.setNullSndDev
