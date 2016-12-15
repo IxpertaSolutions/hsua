@@ -31,4 +31,5 @@ data PhoneException
     | Unregistration
     | CreateAccount
     | RemoveAccount
+    | UnknowenEventType
   deriving (Typeable, Show, Exception)

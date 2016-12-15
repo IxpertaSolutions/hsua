@@ -15,7 +15,6 @@ module Phone.Internal.FFI.Common
     , PjIO(PjIO)
     , PjStatus(PjStatus)
     , Reason
-    , SipEvent
     , UserData
     , Msg
     , liftAlloc
@@ -63,7 +62,6 @@ liftAlloc f = liftIO . f . (unsafeRunPjIO .)
 
 data CallSetting
 data Reason
-data SipEvent
 data UserData
 data Msg
 

@@ -47,17 +47,17 @@ import Phone.Internal.FFI.Common
     ( PjIO(PjIO)
     , PjStatus(PjStatus)
     , CallId(CallId)
-    , SipEvent
     , liftAlloc
     )
 import Phone.Internal.FFI.Logging (LoggingConfig)
 import Phone.Internal.FFI.Media (MediaConfig)
 import Phone.Internal.FFI.RxData (RxData)
+import Phone.Internal.FFI.Event (Event)
 
 
 data PjSuaConfig
 
-type OnCallStateHandler = CallId -> Ptr SipEvent -> PjIO ()
+type OnCallStateHandler = CallId -> Ptr Event -> PjIO ()
 type OnIncomingCallHandler = AccountId -> CallId -> Ptr RxData -> PjIO ()
 type OnMediaStateHandler = CallId -> PjIO ()
 type OnRegistrationStartedHandler = AccountId -> CInt -> PjIO ()

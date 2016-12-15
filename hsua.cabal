@@ -34,6 +34,7 @@ library
     Phone.Exception
     Phone.MonadPJ
     Phone.Run
+    Phone.Event
   other-modules:
     Phone.Internal.FFI
     Phone.Internal.FFI.Account
@@ -41,6 +42,7 @@ library
     Phone.Internal.FFI.CallManipulation
     Phone.Internal.FFI.Common
     Phone.Internal.FFI.Configuration
+    Phone.Internal.FFI.Event
     Phone.Internal.FFI.GenericStringHeader
     Phone.Internal.FFI.Logging
     Phone.Internal.FFI.Media
@@ -85,6 +87,7 @@ executable test
     Phone.Internal.FFI.CallManipulation
     Phone.Internal.FFI.Common
     Phone.Internal.FFI.Configuration
+    Phone.Internal.FFI.Event
     Phone.Internal.FFI.GenericStringHeader
     Phone.Internal.FFI.Logging
     Phone.Internal.FFI.Media

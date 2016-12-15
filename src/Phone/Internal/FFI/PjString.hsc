@@ -13,6 +13,7 @@ module Phone.Internal.FFI.PjString
     ( PjString
     , withPjString
     , withPjStringPtr
+    , stringLenFromPjString
     )
   where
 
@@ -55,6 +56,9 @@ instance Storable PjString where
 
 pjStringFromCStringLen :: CStringLen -> PjString
 pjStringFromCStringLen (p, l) = PjString p (fromIntegral l)
+
+stringLenFromPjString :: PjString -> CStringLen
+stringLenFromPjString (PjString p l) = (p, fromIntegral l)
 
 withPjString :: String -> (PjString -> PjIO a) -> PjIO a
 withPjString str f =
