@@ -48,11 +48,11 @@ import Phone.Internal.FFI.Common
     , PjStatus(PjStatus)
     , CallId(CallId)
     , SipEvent
-    , RxData
     , liftAlloc
     )
 import Phone.Internal.FFI.Logging (LoggingConfig)
 import Phone.Internal.FFI.Media (MediaConfig)
+import Phone.Internal.FFI.RxData (RxData)
 
 
 data PjSuaConfig

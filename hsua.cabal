@@ -41,9 +41,12 @@ library
     Phone.Internal.FFI.CallManipulation
     Phone.Internal.FFI.Common
     Phone.Internal.FFI.Configuration
+    Phone.Internal.FFI.GenericStringHeader
     Phone.Internal.FFI.Logging
     Phone.Internal.FFI.Media
+    Phone.Internal.FFI.MsgData
     Phone.Internal.FFI.PjString
+    Phone.Internal.FFI.RxData
     Phone.Internal.FFI.Transport
     Phone.Internal.Thread
     Phone.Internal.Utils
@@ -82,9 +85,12 @@ executable test
     Phone.Internal.FFI.CallManipulation
     Phone.Internal.FFI.Common
     Phone.Internal.FFI.Configuration
+    Phone.Internal.FFI.GenericStringHeader
     Phone.Internal.FFI.Logging
     Phone.Internal.FFI.Media
+    Phone.Internal.FFI.MsgData
     Phone.Internal.FFI.PjString
+    Phone.Internal.FFI.RxData
     Phone.Internal.FFI.Transport
     Phone.Internal.Thread
     Phone.Internal.Utils

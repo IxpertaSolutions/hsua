@@ -12,13 +12,12 @@
 module Phone.Internal.FFI.Common
     ( CallId(CallId)
     , CallSetting
-    , MsgData
     , PjIO(PjIO)
     , PjStatus(PjStatus)
     , Reason
-    , RxData
     , SipEvent
     , UserData
+    , Msg
     , liftAlloc
     , pjFalse
     , pjSuccess
@@ -63,10 +62,10 @@ liftAlloc :: ((a -> IO b) -> IO b) -> ((a -> PjIO b) -> PjIO b)
 liftAlloc f = liftIO . f . (unsafeRunPjIO .)
 
 data CallSetting
-data MsgData
 data Reason
 data SipEvent
 data UserData
+data Msg
 
 newtype CallId = CallId CInt deriving (Eq, Show, Storable)
 newtype PjStatus = PjStatus CInt deriving (Eq, Show, Storable)
@@ -81,4 +80,3 @@ pjFalse = #{const PJ_FALSE}
 
 #{enum PjStatus, PjStatus, pjSuccess = PJ_SUCCESS}
 
-data RxData

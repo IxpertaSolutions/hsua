@@ -16,6 +16,7 @@ module Phone.Call
     , hangupAll
     , hangupCall
     , makeCall
+    , makeCallWithHeaders
     , getCallInfo
     )
   where
@@ -68,7 +69,13 @@ import qualified Phone.Internal.FFI.CallManipulation as FFI
     , makeCall
     )
 import qualified Phone.Internal.FFI.Common as FFI (CallId, liftAlloc)
+import qualified Phone.Internal.FFI.MsgData as FFI
+    ( getHeaderList
+    , pjListInsertBefore
+    , withMsgData
+    )
 import qualified Phone.Internal.FFI.PjString as FFI (withPjStringPtr)
+import qualified Phone.Internal.FFI.GenericStringHeader as FFI (withHeader)
 import qualified Phone.Internal.Utils as FFI (check)
 
 
@@ -110,6 +117,28 @@ makeCall accId url = liftPJ $
         FFI.makeCall accId urlPjStr nullPtr nullPtr nullPtr callId
             >>= FFI.check MakeCall
         liftIO $ peek callId
+
+makeCallWithHeaders
+    :: MonadPJ m
+    => FFI.AccountId
+    -> Text
+    -> (Text, Text)
+    -> m FFI.CallId
+makeCallWithHeaders accId url (hName, hValue) = liftPJ $
+    FFI.withPjStringPtr url' $ \urlPjStr ->
+    FFI.liftAlloc alloca $ \callId -> do
+        FFI.withMsgData $ \msgData -> do
+            FFI.withPjStringPtr hName' $ \ hName'' ->
+                FFI.withPjStringPtr hValue' $ \ hValue'' ->
+                    FFI.withHeader hName'' hValue'' $ \hdrPtr -> do
+                        FFI.pjListInsertBefore (FFI.getHeaderList msgData)hdrPtr
+                        FFI.makeCall accId urlPjStr nullPtr nullPtr msgData callId
+                            >>= FFI.check MakeCall
+                        liftIO $ peek callId
+  where
+    hName' = T.unpack hName
+    hValue' = T.unpack hValue
+    url' = T.unpack url
 
 hangupAll :: MonadPJ m => m ()
 hangupAll = liftPJ FFI.hangupAll

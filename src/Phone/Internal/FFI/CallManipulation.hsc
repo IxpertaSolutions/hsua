@@ -21,13 +21,13 @@ import Phone.Internal.FFI.Account (AccountId(AccountId))
 import Phone.Internal.FFI.Common
     ( CallId(CallId)
     , CallSetting
-    , MsgData
     , PjIO(PjIO)
     , PjStatus(PjStatus)
     , Reason
     , UserData
     )
 import Phone.Internal.FFI.PjString (PjString)
+import Phone.Internal.FFI.MsgData (MsgData)
 
 -- | Send response to incoming INVITE request with call setting param.
 -- Depending on the status code specified as parameter, this function may send
