@@ -11,8 +11,8 @@
 -- Stability:    experimental
 -- Portability:  GHC specific language extensions.
 module Phone.Event
-    ( FFI.Event
-    , FFI.EventType
+    ( FFI.EventType
+    , Event
     , getHeaderFromEvent
     )
   where
@@ -23,16 +23,16 @@ import Data.Eq ((==))
 import Data.Function (($), (.))
 import Data.Functor ((<$>))
 import Data.Maybe (Maybe(Just, Nothing))
-import Foreign.Ptr (Ptr, nullPtr)
+import Foreign.Ptr (nullPtr)
 import Foreign.Storable (peek)
 import Foreign.C.String (peekCStringLen)
 import Control.Monad.IO.Class (liftIO)
 import Data.Text (Text)
 import qualified Data.Text as T (pack, unpack)
 
+import Phone.Internal.Event (Event(Event))
 import qualified Phone.Internal.FFI.Event as FFI
-    ( Event
-    , EventType
+    ( EventType
         ( Unknown
         , Timer
         , TxMsg
@@ -56,8 +56,8 @@ import qualified Phone.Internal.FFI.RxData as FFI (getMsgInfo)
 import Phone.MonadPJ (MonadPJ(liftPJ))
 
 
-getHeaderFromEvent :: MonadPJ m => Ptr FFI.Event -> Text -> m (Maybe Text)
-getHeaderFromEvent ev hName = liftPJ $ FFI.getEventType ev >>= \case
+getHeaderFromEvent :: MonadPJ m => Event -> Text -> m (Maybe Text)
+getHeaderFromEvent (Event ev) hName = liftPJ $ FFI.getEventType ev >>= \case
     FFI.Unknown -> pure Nothing
     FFI.Timer -> pure Nothing
     FFI.TxMsg -> pure Nothing

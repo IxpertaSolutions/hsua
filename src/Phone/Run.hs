@@ -62,6 +62,7 @@ import Phone.Exception
         )
     )
 import Phone.MonadPJ (MonadPJ(liftPJ))
+import Phone.Internal.Event (Event(Event))
 import qualified Phone.Internal.FFI as FFI
     ( createPjSua
     , destroyPjSua
@@ -164,7 +165,7 @@ initPhone Config{..} = liftPJ $ do
         FFI.withPjStringPtr "PCMA" $ \codecStr ->
             FFI.codecSetPriority codecStr 255
 
-    onCallState f callId _ = f callId
+    onCallState f callId event = f callId (Event event)
     onIncCall f acc callId _ = f acc callId
     onRegStarted f acc p = f acc $ fromIntegral p
 

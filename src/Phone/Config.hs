@@ -25,6 +25,7 @@ import GHC.Generics (Generic)
 
 import Data.Default (Default)
 
+import Phone.Internal.Event (Event)
 import Phone.Internal.FFI.Account (AccountId)
 import Phone.Internal.FFI.Common (CallId, PjIO)
 
@@ -38,7 +39,7 @@ data Config = Config
 instance Default Config
 
 data Handlers = Handlers
-    { onCallStateChange :: Maybe (CallId -> PjIO ())
+    { onCallStateChange :: Maybe (CallId -> Event -> PjIO ())
     , onIncomingCall :: Maybe (AccountId -> CallId -> PjIO ())
     , onRegistrationStateChange :: Maybe (AccountId -> PjIO ())
     , onRegistrationStarted :: Maybe (AccountId -> Int -> PjIO ())
