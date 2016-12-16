@@ -12,9 +12,9 @@
 module Phone.Internal.FFI.GenericStringHeader
     ( GenericStringHeader
     , getHeaderName
-    , getHeaderVelue
+    , getHeaderValue
+    , msgFindHeaderByName
     , withHeader
-    , pjSipMsgFindHeaderByName
     )
   where
 
@@ -29,7 +29,6 @@ import Phone.Internal.FFI.PjString (PjString)
 
 
 data GenericStringHeader
-data HeaderWhereToStart
 
 foreign import ccall "pjsip_generic_string_hdr_init2" initHeader
     :: Ptr GenericStringHeader -> Ptr PjString -> Ptr PjString -> PjIO ()
@@ -44,14 +43,14 @@ withHeader hNamef hValue f =
         initHeader stringHdr hNamef hValue
         f stringHdr
 
-foreign import ccall "pjsip_msg_find_hdr_by_name" pjSipMsgFindHeaderByName
+foreign import ccall "pjsip_msg_find_hdr_by_name" msgFindHeaderByName
     :: Ptr Msg
     -> Ptr PjString
-    -> Ptr HeaderWhereToStart
+    -> Ptr GenericStringHeader
     -> PjIO (Ptr GenericStringHeader)
 
 getHeaderName :: Ptr GenericStringHeader -> Ptr PjString
 getHeaderName = #{ptr pjsip_generic_string_hdr, name}
 
-getHeaderVelue :: Ptr GenericStringHeader -> Ptr PjString
-getHeaderVelue = #{ptr pjsip_generic_string_hdr, hvalue}
+getHeaderValue :: Ptr GenericStringHeader -> Ptr PjString
+getHeaderValue = #{ptr pjsip_generic_string_hdr, hvalue}

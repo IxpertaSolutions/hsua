@@ -1,6 +1,4 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
 -- |
 -- Module:       $HEADER$
 -- Description:  Low level FFI.

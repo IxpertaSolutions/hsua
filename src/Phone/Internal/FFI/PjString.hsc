@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 -- |
@@ -11,9 +12,9 @@
 -- Portability:  GHC specific language extensions.
 module Phone.Internal.FFI.PjString
     ( PjString
-    , withPjString
+    , AsPjString(..)
+    , peekPjStringPtr
     , withPjStringPtr
-    , stringLenFromPjString
     )
   where
 
@@ -26,10 +27,11 @@ module Phone.Internal.FFI.PjString
 import Prelude (fromIntegral)
 
 import Control.Applicative((<*>))
+import Control.Monad ((=<<))
 import Data.Function (($), (.))
 import Data.Functor ((<$>))
 import Data.String (String)
-import Foreign.C.String (CString, CStringLen, withCStringLen)
+import Foreign.C.String (CString, CStringLen, peekCStringLen, withCStringLen)
 import Foreign.C.Types (CLong)
 import Foreign.Marshal.Utils (with)
 import Foreign.Ptr (Ptr)
@@ -38,6 +40,10 @@ import Foreign.Storable
     , peekByteOff
     , pokeByteOff
     )
+
+import Control.Monad.IO.Class (liftIO)
+import Data.Text (Text)
+import qualified Data.Text.Foreign as T (peekCStringLen, withCStringLen)
 
 import Phone.Internal.FFI.Common (PjIO, liftAlloc)
 
@@ -54,15 +60,28 @@ instance Storable PjString where
         #{poke pj_str_t, ptr} ptr p
         #{poke pj_str_t, slen} ptr l
 
+class AsPjString s where
+    withPjString :: s -> (PjString -> PjIO a) -> PjIO a
+    peekPjString :: PjString -> PjIO s
+
+instance AsPjString String where
+    withPjString str f =
+        liftAlloc (withCStringLen str) $ f . pjStringFromCStringLen
+    peekPjString = liftIO . peekCStringLen . cStringLenFromPjString
+
+instance AsPjString Text where
+    withPjString str f =
+        liftAlloc (T.withCStringLen str) $ f . pjStringFromCStringLen
+    peekPjString = liftIO . T.peekCStringLen . cStringLenFromPjString
+
 pjStringFromCStringLen :: CStringLen -> PjString
 pjStringFromCStringLen (p, l) = PjString p (fromIntegral l)
 
-stringLenFromPjString :: PjString -> CStringLen
-stringLenFromPjString (PjString p l) = (p, fromIntegral l)
+cStringLenFromPjString :: PjString -> CStringLen
+cStringLenFromPjString (PjString p l) = (p, fromIntegral l)
 
-withPjString :: String -> (PjString -> PjIO a) -> PjIO a
-withPjString str f =
-    liftAlloc (withCStringLen str) $ f . pjStringFromCStringLen
-
-withPjStringPtr :: String -> (Ptr PjString -> PjIO a) -> PjIO a
+withPjStringPtr :: AsPjString s => s -> (Ptr PjString -> PjIO a) -> PjIO a
 withPjStringPtr str f = withPjString str $ \pjStr -> liftAlloc (with pjStr) f
+
+peekPjStringPtr :: AsPjString s => Ptr PjString -> PjIO s
+peekPjStringPtr p = peekPjString =<< liftIO (peek p)

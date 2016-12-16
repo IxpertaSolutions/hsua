@@ -19,18 +19,15 @@ module Phone.Event
 
 import Control.Applicative (pure)
 import Control.Monad ((>>=))
-import Data.Eq ((==))
 import Data.Function (($), (.))
-import Data.Functor ((<$>))
-import Data.Maybe (Maybe(Just, Nothing))
+import Data.Maybe (Maybe(Nothing))
 import Foreign.Ptr (nullPtr)
-import Foreign.Storable (peek)
-import Foreign.C.String (peekCStringLen)
-import Control.Monad.IO.Class (liftIO)
+
 import Data.Text (Text)
-import qualified Data.Text as T (pack, unpack)
+import qualified Data.Text as T (unpack)
 
 import Phone.Internal.Event (Event(Event))
+import qualified Phone.Internal.FFI.Common as FFI (maybePeek)
 import qualified Phone.Internal.FFI.Event as FFI
     ( EventType
         ( Unknown
@@ -45,11 +42,11 @@ import qualified Phone.Internal.FFI.Event as FFI
     , getRxData
     )
 import qualified Phone.Internal.FFI.GenericStringHeader as FFI
-    ( getHeaderVelue
-    , pjSipMsgFindHeaderByName
+    ( getHeaderValue
+    , msgFindHeaderByName
     )
 import qualified Phone.Internal.FFI.PjString as FFI
-    ( stringLenFromPjString
+    ( peekPjStringPtr
     , withPjStringPtr
     )
 import qualified Phone.Internal.FFI.RxData as FFI (getMsgInfo)
@@ -61,14 +58,15 @@ getHeaderFromEvent (Event ev) hName = liftPJ $ FFI.getEventType ev >>= \case
     FFI.Unknown -> pure Nothing
     FFI.Timer -> pure Nothing
     FFI.TxMsg -> pure Nothing
-    FFI.RxMsg -> FFI.withPjStringPtr (T.unpack hName) $
-        \hName' ->  FFI.pjSipMsgFindHeaderByName
-            (FFI.getMsgInfo $ FFI.getRxData ev) hName' nullPtr >>= maybeValue
+    FFI.RxMsg -> msgFindHeaderByName hName >>= maybeValue
     FFI.TransportError -> pure Nothing
     FFI.TransactionState -> pure Nothing
     FFI.User -> pure Nothing
   where
-    maybeValue res = if res == nullPtr
-        then pure Nothing
-        else (Just . T.pack) <$> liftIO (peek (FFI.getHeaderVelue res)
-            >>= (peekCStringLen . FFI.stringLenFromPjString))
+    maybeValue = FFI.maybePeek (FFI.peekPjStringPtr . FFI.getHeaderValue)
+
+    msgInfo = FFI.getMsgInfo $ FFI.getRxData ev
+
+    msgFindHeaderByName name =
+        FFI.withPjStringPtr (T.unpack name) $ \namePjStr ->
+            FFI.msgFindHeaderByName msgInfo namePjStr nullPtr
