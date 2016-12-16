@@ -46,4 +46,3 @@ foreign import ccall "pj_list_insert_before" pjListInsertBefore
 
 getHeaderList :: Ptr MsgData -> Ptr HeaderList
 getHeaderList = #{ptr pjsua_msg_data, hdr_list}
-

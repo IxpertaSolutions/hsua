@@ -77,4 +77,3 @@ pjFalse :: CInt
 pjFalse = #{const PJ_FALSE}
 
 #{enum PjStatus, PjStatus, pjSuccess = PJ_SUCCESS}
-

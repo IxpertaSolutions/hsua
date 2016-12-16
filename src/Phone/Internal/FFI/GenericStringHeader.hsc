@@ -55,4 +55,3 @@ getHeaderName = #{ptr pjsip_generic_string_hdr, name}
 
 getHeaderVelue :: Ptr GenericStringHeader -> Ptr PjString
 getHeaderVelue = #{ptr pjsip_generic_string_hdr, hvalue}
-

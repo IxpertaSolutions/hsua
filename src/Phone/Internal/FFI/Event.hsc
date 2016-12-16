@@ -73,4 +73,3 @@ instance Enum EventType where
 
 getRxData :: Ptr Event -> Ptr RxData
 getRxData = #{ptr pjsip_event, body.rx_msg.rdata}
-

@@ -72,4 +72,3 @@ getHeaderFromEvent ev hName = liftPJ $ FFI.getEventType ev >>= \case
         then pure Nothing
         else (Just . T.pack) <$> liftIO (peek (FFI.getHeaderVelue res)
             >>= (peekCStringLen . FFI.stringLenFromPjString))
-

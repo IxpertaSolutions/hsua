@@ -16,4 +16,3 @@ void print_devices()
             info.input_count, info.output_count);
     }
 }
-

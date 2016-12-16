@@ -25,4 +25,3 @@ data RxData
 
 getMsgInfo :: Ptr RxData -> Ptr Msg
 getMsgInfo = #{ptr pjsip_rx_data, msg_info.msg}
-
