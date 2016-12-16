@@ -24,12 +24,14 @@ module Phone.Call
 import Prelude (fromIntegral)
 
 import Control.Applicative (Applicative((<*>)))
-import Control.Monad ((>>=))
+import Control.Monad ((>>=), mapM_)
 import Data.Function (($), (.))
 import Data.Functor ((<$>))
 import Data.Int (Int)
+import Data.List (reverse)
+import Data.Tuple (uncurry)
 import Foreign.Marshal.Alloc (alloca)
-import Foreign.Ptr (nullPtr)
+import Foreign.Ptr (Ptr, nullPtr)
 import Foreign.Storable (peek)
 import Text.Show (Show)
 
@@ -68,10 +70,10 @@ import qualified Phone.Internal.FFI.CallManipulation as FFI
     , hangupCall
     , makeCall
     )
-import qualified Phone.Internal.FFI.Common as FFI (CallId, liftAlloc)
+import qualified Phone.Internal.FFI.Common as FFI (CallId, PjIO, liftAlloc)
 import qualified Phone.Internal.FFI.MsgData as FFI
-    ( getHeaderList
-    , pjListInsertBefore
+    ( MsgData
+    , pushHeader
     , withMsgData
     )
 import qualified Phone.Internal.FFI.PjString as FFI (withPjStringPtr)
@@ -122,23 +124,31 @@ makeCallWithHeaders
     :: MonadPJ m
     => FFI.AccountId
     -> Text
-    -> (Text, Text)
+    -> [(Text, Text)]
     -> m FFI.CallId
-makeCallWithHeaders accId url (hName, hValue) = liftPJ $
-    FFI.withPjStringPtr url' $ \urlPjStr ->
-    FFI.liftAlloc alloca $ \callId ->
-    FFI.withMsgData $ \msgData ->
-    FFI.withPjStringPtr hName' $ \hName'' ->
-    FFI.withPjStringPtr hValue' $ \hValue'' ->
-    FFI.withHeader hName'' hValue'' $ \hdrPtr -> do
-        FFI.pjListInsertBefore (FFI.getHeaderList msgData) hdrPtr
+makeCallWithHeaders accId url hs = liftPJ $
+    FFI.withPjStringPtr (T.unpack url) $ \urlPjStr ->
+    withMsgData hs $ \msgData ->
+    FFI.liftAlloc alloca $ \callId -> do
         FFI.makeCall accId urlPjStr nullPtr nullPtr msgData callId
             >>= FFI.check MakeCall
         liftIO $ peek callId
+
+withMsgData :: [(Text, Text)] -> (Ptr FFI.MsgData -> FFI.PjIO a) -> FFI.PjIO a
+withMsgData headers f = go headers []
   where
-    hName' = T.unpack hName
-    hValue' = T.unpack hValue
-    url' = T.unpack url
+    go [] ps = withMsgData' (reverse ps) f
+    go (h:hs) ps = uncurry withHeader h $ \p -> go hs (p:ps)
+
+    withMsgData' ptrs g =
+        FFI.withMsgData $ \msgData -> do
+            mapM_ (FFI.pushHeader msgData) ptrs
+            g msgData
+
+    withHeader name value g =
+        FFI.withPjStringPtr (T.unpack name) $ \namePjStr ->
+        FFI.withPjStringPtr (T.unpack value) $ \valuePjStr ->
+        FFI.withHeader namePjStr valuePjStr g
 
 hangupAll :: MonadPJ m => m ()
 hangupAll = liftPJ FFI.hangupAll

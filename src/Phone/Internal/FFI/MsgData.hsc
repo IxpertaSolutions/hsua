@@ -11,15 +11,14 @@
 -- Portability:  GHC specific language extensions.
 module Phone.Internal.FFI.MsgData
     ( MsgData
-    , getHeaderList
-    , pjListInsertBefore
+    , pushHeader
     , withMsgData
     )
   where
 
 #include <pjsua-lib/pjsua.h>
 
-import Data.Function (($))
+import Data.Function (($), (.))
 import Foreign.Ptr (Ptr, plusPtr)
 import Foreign.Marshal.Alloc (allocaBytes)
 
@@ -44,5 +43,5 @@ foreign import ccall "pjsua_msg_data_init" initMsgData
 foreign import ccall "pj_list_insert_before" pjListInsertBefore
     :: Ptr HeaderList -> Ptr GenericStringHeader -> PjIO ()
 
-getHeaderList :: Ptr MsgData -> Ptr HeaderList
-getHeaderList = #{ptr pjsua_msg_data, hdr_list}
+pushHeader :: Ptr MsgData -> Ptr GenericStringHeader -> PjIO ()
+pushHeader = pjListInsertBefore . #{ptr pjsua_msg_data, hdr_list}
