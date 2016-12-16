@@ -29,6 +29,7 @@ module Phone.Internal.FFI.Common
 import Control.Applicative (Applicative)
 import Control.Monad (Monad)
 import Data.Eq (Eq)
+import Data.Ord (Ord)
 import Data.Function ((.))
 import Data.Functor (Functor)
 import Data.Maybe (Maybe)
@@ -72,7 +73,7 @@ data Reason
 data UserData
 data Msg
 
-newtype CallId = CallId CInt deriving (Eq, Show, Storable)
+newtype CallId = CallId CInt deriving (Eq, Ord, Show, Storable)
 newtype PjStatus = PjStatus CInt deriving (Eq, Show, Storable)
 
 -- | Equivalent to PJ_TRUE
