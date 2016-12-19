@@ -21,7 +21,7 @@ import Prelude (fromIntegral)
 
 import Control.Applicative (pure)
 import Control.Exception (bracket_)
-import Control.Monad ((>=>), (>>=), void)
+import Control.Monad ((>=>), (>>=), (>>), void)
 import Data.Function (($), (.))
 import Data.Maybe (Maybe(Just, Nothing), maybe)
 import Foreign.Marshal.Utils (fromBool)
@@ -101,6 +101,7 @@ import qualified Phone.Internal.FFI.PjString as FFI
     )
 import qualified Phone.Internal.FFI.Transport as FFI
     ( createTransport
+    , setDefaultTransportConfig
     , udpTransport
     , withTransportConfig
     )
@@ -133,7 +134,8 @@ initPhone Config{..} = liftPJ $ do
                 FFI.initializePjSua pjCfg logCfg mediaCfg
                 >>= FFI.check Initialization
     FFI.withTransportConfig $ \transportCfg ->
-        FFI.createTransport FFI.udpTransport transportCfg nullPtr
+        FFI.setDefaultTransportConfig transportCfg
+        >> FFI.createTransport FFI.udpTransport transportCfg nullPtr
         >>= FFI.check Transport
     FFI.pjsuaStart >>= FFI.check Start
     setCodecs

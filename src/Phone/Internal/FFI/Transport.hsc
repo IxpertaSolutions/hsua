@@ -14,6 +14,7 @@ module Phone.Internal.FFI.Transport
     ( TransportConfig
     , createTransport
     , setTransportPort
+    , setDefaultTransportConfig
     , tcpTransport
     , udpTransport
     , withTransportConfig
@@ -47,6 +48,9 @@ setTransportPort = (liftIO .) . #{poke pjsua_transport_config, port}
     udpTransport = PJSIP_TRANSPORT_UDP,
     tcpTransport = PJSIP_TRANSPORT_TCP
 }
+
+foreign import ccall "pjsua_transport_config_default" setDefaultTransportConfig
+    :: Ptr TransportConfig -> PjIO ()
 
 foreign import ccall "pjsua_transport_create" createTransport
     :: TransportType -> Ptr TransportConfig -> Ptr TransportId -> PjIO PjStatus
