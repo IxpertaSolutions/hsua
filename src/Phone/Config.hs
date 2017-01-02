@@ -22,6 +22,7 @@ import Data.Maybe (Maybe)
 import Data.String (String)
 import Data.Word (Word)
 import GHC.Generics (Generic)
+import Text.Show (Show)
 
 import Data.Default (Default)
 
@@ -40,10 +41,11 @@ instance Default Config
 
 data Handlers = Handlers
     { onCallStateChange :: Maybe (CallId -> Event -> PjIO ())
+    , onCallTransactionStateChange :: Maybe (CallId -> Event -> PjIO ())
     , onIncomingCall :: Maybe (AccountId -> CallId -> PjIO ())
-    , onRegistrationStateChange :: Maybe (AccountId -> PjIO ())
-    , onRegistrationStarted :: Maybe (AccountId -> Int -> PjIO ())
     , onMediaStateChange :: Maybe (CallId -> PjIO ())
+    , onRegistrationStarted :: Maybe (AccountId -> Int -> PjIO ())
+    , onRegistrationStateChange :: Maybe (AccountId -> PjIO ())
     }
   deriving (Generic)
 
@@ -55,6 +57,6 @@ data Logging = Logging
     , logMsgLogging :: Maybe Bool
     , logFilename :: Maybe String
     }
-  deriving (Generic)
+    deriving (Show, Generic)
 
 instance Default Logging

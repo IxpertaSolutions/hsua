@@ -17,7 +17,7 @@ import Control.Applicative (pure)
 import Control.Concurrent (forkOS)
 import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar, takeMVar)
 import Control.Exception (SomeException, throwIO, try)
-import Control.Monad ((>>=), forever, void)
+import Control.Monad ((>>=), forever, join, void)
 import Data.Either (either)
 import Data.Function (($), (.))
 import System.IO (IO)
@@ -32,9 +32,7 @@ queue = unsafePerformIO $ do
     pure mvar
 
 worker :: MVar (IO ()) -> IO ()
-worker mvar = forever $ do
-    action <- takeMVar mvar
-    action
+worker = forever . join . takeMVar
 
 execInBoundWorker :: IO a -> IO a
 execInBoundWorker action = do

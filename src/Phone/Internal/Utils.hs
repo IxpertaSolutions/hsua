@@ -13,15 +13,14 @@ module Phone.Internal.Utils
     )
   where
 
-import Control.Applicative (pure)
 import Control.Exception.Base (Exception, throwIO)
+import Control.Monad (unless)
 import Control.Monad.IO.Class (liftIO)
-import Data.Eq ((/=))
+import Data.Eq ((==))
+import Data.Function (($))
 
 import Phone.Internal.FFI.Common (PjIO, PjStatus, pjSuccess)
 
 
 check :: Exception e => e -> PjStatus -> PjIO ()
-check e ret = if ret /= pjSuccess
-    then liftIO (throwIO e)
-    else pure ()
+check e ret = unless (ret == pjSuccess) $ liftIO (throwIO e)

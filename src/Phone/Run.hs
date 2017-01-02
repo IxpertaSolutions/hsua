@@ -21,7 +21,7 @@ import Prelude (fromIntegral)
 
 import Control.Applicative (pure)
 import Control.Exception (bracket_)
-import Control.Monad ((>=>), (>>=), (>>), void)
+import Control.Monad ((>=>), (>>), (>>=), void)
 import Data.Function (($), (.))
 import Data.Maybe (Maybe(Just, Nothing), maybe)
 import Foreign.Marshal.Utils (fromBool)
@@ -39,6 +39,7 @@ import Phone.Config
     , Handlers
         ( Handlers
         , onCallStateChange
+        , onCallTransactionStateChange
         , onIncomingCall
         , onMediaStateChange
         , onRegistrationStarted
@@ -61,7 +62,7 @@ import Phone.Exception
         )
     )
 import Phone.MonadPJ (MonadPJ(liftPJ))
-import Phone.Internal.Event (Event(Event))
+import Phone.Internal.Event (toEvent)
 import qualified Phone.Internal.FFI as FFI
     ( createPjSua
     , destroyPjSua
@@ -73,11 +74,13 @@ import qualified Phone.Internal.FFI.CallManipulation as FFI (hangupAll)
 import qualified Phone.Internal.FFI.Configuration as FFI
     ( initializePjSua
     , setOnCallStateCallback
+    , setOnCallTransactionStateCallback
     , setOnIncomingCallCallback
     , setOnMediaStateCallback
     , setOnRegistrationStartedCallback
     , setOnRegistrationStateCallback
     , toOnCallState
+    , toOnCallTransactioState
     , toOnIncomingCall
     , toOnMediaState
     , toOnRegistrationStarted
@@ -117,6 +120,9 @@ initPhone Config{..} = liftPJ $ do
         whenJust onCallStateChange
             $ liftIO . FFI.toOnCallState . onCallState
             >=> FFI.setOnCallStateCallback pjCfg
+        whenJust onCallTransactionStateChange
+            $ liftIO . FFI.toOnCallTransactioState . onCallTransactionState
+            >=> FFI.setOnCallTransactionStateCallback pjCfg
         whenJust onIncomingCall
             $ liftIO . FFI.toOnIncomingCall . onIncCall
             >=> FFI.setOnIncomingCallCallback pjCfg
@@ -130,9 +136,9 @@ initPhone Config{..} = liftPJ $ do
             $ liftIO . FFI.toOnMediaState
             >=> FFI.setOnMediaStateCallback pjCfg
         withLog $ \logCfg ->
-            withMedia $ \mediaCfg ->
-                FFI.initializePjSua pjCfg logCfg mediaCfg
-                >>= FFI.check Initialization
+            withMedia
+                $ FFI.initializePjSua pjCfg logCfg
+                >=> FFI.check Initialization
     FFI.withTransportConfig $ \transportCfg ->
         FFI.setDefaultTransportConfig transportCfg
         >> FFI.createTransport FFI.udpTransport transportCfg nullPtr
@@ -166,8 +172,14 @@ initPhone Config{..} = liftPJ $ do
         FFI.withPjStringPtr "PCMA" $ \codecStr ->
             FFI.codecSetPriority codecStr 255
 
-    onCallState f callId event = f callId (Event event)
+    onCallState f callId event =
+        toEvent event >>= f callId
+
+    onCallTransactionState f callId _ event =
+        toEvent event >>= f callId
+
     onIncCall f acc callId _ = f acc callId
+
     onRegStarted f acc p = f acc $ fromIntegral p
 
     whenJust m op = maybe (pure ()) op m

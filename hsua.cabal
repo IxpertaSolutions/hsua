@@ -27,6 +27,7 @@ library
     , NoImplicitPrelude
     , OverloadedStrings
     , RecordWildCards
+
   exposed-modules:
     Phone.Account
     Phone.Call
@@ -35,6 +36,7 @@ library
     Phone.MonadPJ
     Phone.Run
     Phone.Event
+
   other-modules:
     Phone.Internal.Event
     Phone.Internal.FFI
@@ -47,6 +49,7 @@ library
     Phone.Internal.FFI.GenericStringHeader
     Phone.Internal.FFI.Logging
     Phone.Internal.FFI.Media
+    Phone.Internal.FFI.Msg
     Phone.Internal.FFI.MsgData
     Phone.Internal.FFI.PjString
     Phone.Internal.FFI.RxData
@@ -55,9 +58,11 @@ library
     Phone.Internal.Utils
   c-sources:
     cbits/pjsua_device.c
+    cbits/pjsua_msg.c
 
   build-depends:
     base >=4.8 && <5
+    , case-insensitive
     , data-default >= 0.7.1.1 && <0.8
     , exceptions ==0.8.*
     , text
@@ -68,7 +73,6 @@ library
     -fwarn-tabs
     -fwarn-missing-import-lists
     -fwarn-implicit-prelude
-    -threaded
 
   if flag(pedantic)
     ghc-options:        -Werror
@@ -81,6 +85,7 @@ executable test
     NoImplicitPrelude
     , OverloadedStrings
     , RecordWildCards
+
   other-modules:
     Phone.Internal.Event
     Phone.Internal.FFI
@@ -93,12 +98,14 @@ executable test
     Phone.Internal.FFI.GenericStringHeader
     Phone.Internal.FFI.Logging
     Phone.Internal.FFI.Media
+    Phone.Internal.FFI.Msg
     Phone.Internal.FFI.MsgData
     Phone.Internal.FFI.PjString
     Phone.Internal.FFI.RxData
     Phone.Internal.FFI.Transport
     Phone.Internal.Thread
     Phone.Internal.Utils
+
   build-depends:
     base >=4.8 && <5
     , exceptions ==0.8.*

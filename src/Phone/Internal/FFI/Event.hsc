@@ -14,6 +14,9 @@ module Phone.Internal.FFI.Event
     , EventType(..)
     , getEventType
     , getRxData
+    , getMsgFromEvent
+    , getTsxType
+    , getTsxRxData
     )
   where
 
@@ -24,14 +27,15 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Eq (Eq)
 import Data.Function ((.))
 import Data.Monoid ((<>))
-import Foreign.C.Types (CInt)
+import Foreign.C.Types (CInt(CInt))
 import Foreign.Ptr (Ptr, plusPtr)
 import Foreign.Storable (peekByteOff)
 import Prelude (Enum, toEnum, fromEnum, fromIntegral, error)
 import Text.Show (Show, show)
 
 import Phone.Internal.FFI.RxData (RxData)
-import Phone.Internal.FFI.Common (PjIO)
+import Phone.Internal.FFI.Common (PjIO(PjIO))
+import Phone.Internal.FFI.Msg (Msg)
 
 
 data Event
@@ -73,3 +77,13 @@ instance Enum EventType where
 
 getRxData :: Ptr Event -> Ptr RxData
 getRxData = #{ptr pjsip_event, body.rx_msg.rdata}
+
+getTsxType :: Ptr Event -> PjIO EventType
+getTsxType ptr = (toEnum . fromIntegral) <$> getTsxType' ptr
+
+foreign import ccall "get_tsx_type" getTsxType' :: Ptr Event -> PjIO CInt
+foreign import ccall "get_tsx_rx_data" getTsxRxData 
+    :: Ptr Event -> PjIO (Ptr RxData)
+
+foreign import ccall "get_msg_from_event" getMsgFromEvent
+    :: Ptr Event -> PjIO (Ptr Msg)

@@ -24,7 +24,8 @@ import Data.Function (($))
 import Foreign.Ptr (Ptr, plusPtr)
 import Foreign.Marshal.Alloc (allocaBytes)
 
-import Phone.Internal.FFI.Common (PjIO(PjIO), Msg, liftAlloc)
+import Phone.Internal.FFI.Common (PjIO(PjIO), liftAlloc)
+import Phone.Internal.FFI.Msg (Msg)
 import Phone.Internal.FFI.PjString (PjString)
 
 

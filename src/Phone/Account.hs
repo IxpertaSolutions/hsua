@@ -18,8 +18,8 @@ module Phone.Account
     , createAccount
     , isAccountRegistered
     , mkSimpleAccount
-    , removeAccount
     , registerAccount
+    , removeAccount
     , unregisterAccount
     )
   where
@@ -105,7 +105,7 @@ mkSimpleAccount server user password = Account
     }
 
 createAccount :: MonadPJ m => WhenRegister -> Account -> m AccountId
-createAccount whenReg Account{..} = liftPJ $
+createAccount whenReg Account{..} = liftPJ .
     FFI.withPjString (T.unpack accountId) $ \accountIdPjStr ->
     FFI.withPjString (T.unpack registrationUri) $ \registrationUriPjStr ->
     FFI.withPjString (T.unpack realm) $ \realmPjStr ->

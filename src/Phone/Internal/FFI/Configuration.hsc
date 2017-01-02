@@ -11,6 +11,7 @@
 -- Portability:  GHC specific language extensions.
 module Phone.Internal.FFI.Configuration
     ( OnCallStateHandler
+    , OnCallTransactioStateHandler
     , OnIncomingCallHandler
     , OnMediaStateHandler
     , OnRegistrationStartedHandler
@@ -18,11 +19,13 @@ module Phone.Internal.FFI.Configuration
     , PjSuaConfig
     , initializePjSua
     , setOnCallStateCallback
+    , setOnCallTransactionStateCallback
     , setOnIncomingCallCallback
     , setOnMediaStateCallback
     , setOnRegistrationStartedCallback
     , setOnRegistrationStateCallback
     , toOnCallState
+    , toOnCallTransactioState
     , toOnIncomingCall
     , toOnMediaState
     , toOnRegistrationStarted
@@ -44,9 +47,10 @@ import Control.Monad.IO.Class (liftIO)
 
 import Phone.Internal.FFI.Account (AccountId(AccountId))
 import Phone.Internal.FFI.Common
-    ( PjIO(PjIO)
+    ( CallId(CallId)
+    , PjIO(PjIO)
     , PjStatus(PjStatus)
-    , CallId(CallId)
+    , Transaction
     , liftAlloc
     )
 import Phone.Internal.FFI.Logging (LoggingConfig)
@@ -57,6 +61,8 @@ import Phone.Internal.FFI.Event (Event)
 
 data PjSuaConfig
 
+type OnCallTransactioStateHandler =
+    CallId -> Ptr Transaction -> Ptr Event -> PjIO ()
 type OnCallStateHandler = CallId -> Ptr Event -> PjIO ()
 type OnIncomingCallHandler = AccountId -> CallId -> Ptr RxData -> PjIO ()
 type OnMediaStateHandler = CallId -> PjIO ()
@@ -75,6 +81,8 @@ foreign import ccall "pjsua_config_default" defaultPjConfig
 foreign import ccall "pjsua_init" initializePjSua
     :: Ptr PjSuaConfig -> Ptr LoggingConfig -> Ptr MediaConfig -> PjIO PjStatus
 
+foreign import ccall safe "wrapper" toOnCallTransactioState
+    :: OnCallTransactioStateHandler -> IO (FunPtr OnCallTransactioStateHandler)
 foreign import ccall safe "wrapper" toOnCallState
     :: OnCallStateHandler -> IO (FunPtr OnCallStateHandler)
 foreign import ccall safe "wrapper" toOnIncomingCall
@@ -90,6 +98,11 @@ setOnCallStateCallback
     :: Ptr PjSuaConfig -> FunPtr OnCallStateHandler -> PjIO ()
 setOnCallStateCallback =
     (liftIO .) . #{poke pjsua_config, cb.on_call_state}
+
+setOnCallTransactionStateCallback
+    :: Ptr PjSuaConfig -> FunPtr OnCallTransactioStateHandler -> PjIO ()
+setOnCallTransactionStateCallback =
+    (liftIO .) . #{poke pjsua_config, cb.on_call_tsx_state}
 
 setOnIncomingCallCallback
     :: Ptr PjSuaConfig -> FunPtr OnIncomingCallHandler -> PjIO ()

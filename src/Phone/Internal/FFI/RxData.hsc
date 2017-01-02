@@ -11,17 +11,17 @@
 -- Portability:  GHC specific language extensions.
 module Phone.Internal.FFI.RxData
     ( RxData
-    , getMsgInfo
+    , getMsg
     )
   where
 
-import Foreign.Ptr (Ptr, plusPtr)
+import Foreign.Ptr (Ptr)
 
-import Phone.Internal.FFI.Common(Msg)
+import Phone.Internal.FFI.Common (PjIO(PjIO))
+import Phone.Internal.FFI.Msg(Msg)
 
 #include <pjsua-lib/pjsua.h>
 
 data RxData
 
-getMsgInfo :: Ptr RxData -> Ptr Msg
-getMsgInfo = #{ptr pjsip_rx_data, msg_info.msg}
+foreign import ccall "get_rx_msg" getMsg :: Ptr RxData -> PjIO (Ptr Msg)

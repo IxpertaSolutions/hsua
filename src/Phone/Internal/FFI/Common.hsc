@@ -16,7 +16,7 @@ module Phone.Internal.FFI.Common
     , PjStatus(PjStatus)
     , Reason
     , UserData
-    , Msg
+    , Transaction
     , liftAlloc
     , maybePeek
     , pjFalse
@@ -71,7 +71,7 @@ maybePeek peek = liftIO . F.maybePeek (unsafeRunPjIO . peek)
 data CallSetting
 data Reason
 data UserData
-data Msg
+data Transaction
 
 newtype CallId = CallId CInt deriving (Eq, Ord, Show, Storable)
 newtype PjStatus = PjStatus CInt deriving (Eq, Show, Storable)
