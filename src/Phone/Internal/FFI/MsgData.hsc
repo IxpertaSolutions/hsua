@@ -38,8 +38,6 @@ withMsgData f =
 foreign import ccall "pjsua_msg_data_init" initMsgData
     :: Ptr MsgData -> PjIO ()
 
--- | TODO: This should be moved to separated module dedicated to pj linked list
--- ffi.
 foreign import ccall "pj_list_insert_before" pjListInsertBefore
     :: Ptr HeaderList -> Ptr GenericStringHeader -> PjIO ()
 

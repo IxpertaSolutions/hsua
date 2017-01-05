@@ -13,8 +13,6 @@ module Phone.Event
     )
   where
 
---TODO: This module looks useful right :D.
-
 import Phone.Internal.Event
     ( Event
         ( Unknown

@@ -54,28 +54,3 @@ foreign import ccall "pjsua_transport_config_default" setDefaultTransportConfig
 
 foreign import ccall "pjsua_transport_create" createTransport
     :: TransportType -> Ptr TransportConfig -> Ptr TransportId -> PjIO PjStatus
-
--- data TransportType =
---     Unspecified
---     | UDP
---     | TCP
---     | TLS
---     | SCTP
---     | LOOP
---     | LOOP_DGRAM
---     | START_OTHER
---     | IPV6
---     | UDP6
---     | TCP6
---     | TLS6
---   deriving (Show, Eq)
---
--- instance Enum TransportType where
---   fromEnum Unspecified = 0
---   fromEnum UDP = 1
---   fromEnum TCP = 2
---
---   toEnum 0 = PlainKey
---   toEnum 1 = SpecialKey
---   toEnum 2 = NoKey
---   toEnum unmatched = error ("Key.toEnum: Cannot match " ++ show unmatched)
