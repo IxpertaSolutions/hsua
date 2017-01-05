@@ -86,4 +86,4 @@ foreign import ccall "get_tsx_rx_data" getTsxRxData
     :: Ptr Event -> PjIO (Ptr RxData)
 
 foreign import ccall "get_msg_from_event" getMsgFromEvent
-    :: Ptr Event -> PjIO (Ptr Msg)
+     :: Ptr Event -> PjIO (Ptr Msg)

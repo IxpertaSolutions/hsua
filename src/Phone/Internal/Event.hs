@@ -18,7 +18,6 @@ module Phone.Internal.Event
 
 import Control.Applicative (pure)
 import Control.Monad ((>>=))
-import Control.Monad.IO.Class (liftIO)
 import Data.Bool (otherwise)
 import Data.Eq ((==))
 import Data.Function (($), (.))
@@ -97,7 +96,7 @@ toEvent evPtr = FFI.getEventType evPtr >>= \case
         go list hdr'
             | hdr' == endHdr = pure list
             | otherwise = do
-                namePjString <- liftIO $ FFI.getHdrName hdr'
+                namePjString <- FFI.getHdrName hdr'
                 name <- FFI.peekPjString namePjString
                 -- TODO: Fill the header value
                 FFI.getNextHdr hdr' >>= go ((mk $ T.pack name, "") : list)
