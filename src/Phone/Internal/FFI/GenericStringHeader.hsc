@@ -11,9 +11,6 @@
 -- Portability:  GHC specific language extensions.
 module Phone.Internal.FFI.GenericStringHeader
     ( GenericStringHeader
-    , getHeaderName
-    , getHeaderValue
-    , msgFindHeaderByName
     , withHeader
     )
   where
@@ -21,11 +18,10 @@ module Phone.Internal.FFI.GenericStringHeader
 #include <pjsua-lib/pjsua.h>
 
 import Data.Function (($))
-import Foreign.Ptr (Ptr, plusPtr)
+import Foreign.Ptr (Ptr)
 import Foreign.Marshal.Alloc (allocaBytes)
 
 import Phone.Internal.FFI.Common (PjIO(PjIO), liftAlloc)
-import Phone.Internal.FFI.Msg (Msg)
 import Phone.Internal.FFI.PjString (PjString)
 
 
@@ -43,15 +39,3 @@ withHeader hNamef hValue f =
     liftAlloc (allocaBytes #{size pjsip_generic_string_hdr}) $ \stringHdr -> do
         initHeader stringHdr hNamef hValue
         f stringHdr
-
-foreign import ccall "pjsip_msg_find_hdr_by_name" msgFindHeaderByName
-    :: Ptr Msg
-    -> Ptr PjString
-    -> Ptr GenericStringHeader
-    -> PjIO (Ptr GenericStringHeader)
-
-getHeaderName :: Ptr GenericStringHeader -> Ptr PjString
-getHeaderName = #{ptr pjsip_generic_string_hdr, name}
-
-getHeaderValue :: Ptr GenericStringHeader -> Ptr PjString
-getHeaderValue = #{ptr pjsip_generic_string_hdr, hvalue}
