@@ -80,7 +80,7 @@ import qualified Phone.Internal.FFI.Configuration as FFI
     , setOnRegistrationStartedCallback
     , setOnRegistrationStateCallback
     , toOnCallState
-    , toOnCallTransactioState
+    , toOnCallTransactionState
     , toOnIncomingCall
     , toOnMediaState
     , toOnRegistrationStarted
@@ -120,7 +120,7 @@ initPhone Config{..} = liftPJ $ do
             $ liftIO . FFI.toOnCallState . onCallState
             >=> FFI.setOnCallStateCallback pjCfg
         whenJust onCallTransactionStateChange
-            $ liftIO . FFI.toOnCallTransactioState . onCallTransactionState
+            $ liftIO . FFI.toOnCallTransactionState . onCallTransactionState
             >=> FFI.setOnCallTransactionStateCallback pjCfg
         whenJust onIncomingCall
             $ liftIO . FFI.toOnIncomingCall . onIncCall

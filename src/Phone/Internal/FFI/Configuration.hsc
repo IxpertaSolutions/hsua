@@ -11,7 +11,7 @@
 -- Portability:  GHC specific language extensions.
 module Phone.Internal.FFI.Configuration
     ( OnCallStateHandler
-    , OnCallTransactioStateHandler
+    , OnCallTransactionStateHandler
     , OnIncomingCallHandler
     , OnMediaStateHandler
     , OnRegistrationStartedHandler
@@ -25,7 +25,7 @@ module Phone.Internal.FFI.Configuration
     , setOnRegistrationStartedCallback
     , setOnRegistrationStateCallback
     , toOnCallState
-    , toOnCallTransactioState
+    , toOnCallTransactionState
     , toOnIncomingCall
     , toOnMediaState
     , toOnRegistrationStarted
@@ -61,7 +61,7 @@ import Phone.Internal.FFI.Event (Event)
 
 data PjSuaConfig
 
-type OnCallTransactioStateHandler =
+type OnCallTransactionStateHandler =
     CallId -> Ptr Transaction -> Ptr Event -> PjIO ()
 type OnCallStateHandler = CallId -> Ptr Event -> PjIO ()
 type OnIncomingCallHandler = AccountId -> CallId -> Ptr RxData -> PjIO ()
@@ -81,8 +81,8 @@ foreign import ccall "pjsua_config_default" defaultPjConfig
 foreign import ccall "pjsua_init" initializePjSua
     :: Ptr PjSuaConfig -> Ptr LoggingConfig -> Ptr MediaConfig -> PjIO PjStatus
 
-foreign import ccall safe "wrapper" toOnCallTransactioState
-    :: OnCallTransactioStateHandler -> IO (FunPtr OnCallTransactioStateHandler)
+foreign import ccall safe "wrapper" toOnCallTransactionState
+    :: OnCallTransactionStateHandler -> IO (FunPtr OnCallTransactionStateHandler)
 foreign import ccall safe "wrapper" toOnCallState
     :: OnCallStateHandler -> IO (FunPtr OnCallStateHandler)
 foreign import ccall safe "wrapper" toOnIncomingCall
@@ -100,7 +100,7 @@ setOnCallStateCallback =
     (liftIO .) . #{poke pjsua_config, cb.on_call_state}
 
 setOnCallTransactionStateCallback
-    :: Ptr PjSuaConfig -> FunPtr OnCallTransactioStateHandler -> PjIO ()
+    :: Ptr PjSuaConfig -> FunPtr OnCallTransactionStateHandler -> PjIO ()
 setOnCallTransactionStateCallback =
     (liftIO .) . #{poke pjsua_config, cb.on_call_tsx_state}
 
