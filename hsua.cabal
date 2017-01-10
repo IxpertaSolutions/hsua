@@ -58,9 +58,6 @@ library
     Phone.Internal.Utils
   c-sources:
     cbits/pjsua_device.c
-    cbits/pjsua_msg.c
-    cbits/pjsua_event.c
-    cbits/pjsua_rx_data.c
 
   build-depends:
     base >=4.8 && <5

@@ -51,7 +51,7 @@ import qualified Phone.Internal.FFI.Event as FFI
         , User
         )
     , getEventType
-    , getMsgFromEvent
+    , getRxRxData
     , getTsxRxData
     , getTsxType
     )
@@ -82,15 +82,14 @@ toEvent evPtr = FFI.getEventType evPtr >>= \case
     FFI.Unknown -> pure Unknown
     FFI.Timer -> pure Timer
     FFI.TxMsg -> pure TxMsg
-    FFI.RxMsg -> FFI.getMsgFromEvent evPtr
-        >>= FFI.getMsgHdr
-        >>= fmap RxMsg . toHeaderList
+    FFI.RxMsg -> FFI.getRxRxData evPtr
+        >>= FFI.getMsg
+        >>= fmap RxMsg . toHeaderList . FFI.getMsgHdr
     FFI.TransportError -> pure TransportError
     FFI.TransactionState -> FFI.getTsxType evPtr >>= \case
         FFI.RxMsg -> FFI.getTsxRxData evPtr
             >>= FFI.getMsg
-            >>= FFI.getMsgHdr
-            >>= fmap TransactionState . toHeaderList
+            >>= fmap TransactionState . toHeaderList . FFI.getMsgHdr
         _ -> pure $ TransactionState []
     FFI.User -> pure User
   where

@@ -21,13 +21,13 @@ module Phone.Internal.FFI.Msg
 
 import Control.Monad.IO.Class (liftIO)
 import Data.Function ((.))
-import Foreign.Ptr (Ptr)
+import Foreign.Ptr (Ptr, plusPtr)
 import Foreign.C.String (CString)
 import Foreign.C.Types (CInt(CInt))
 import Foreign.Storable (peekByteOff)
 import System.IO (IO)
 
-import Phone.Internal.FFI.Common (PjIO(PjIO))
+import Phone.Internal.FFI.Common (PjIO)
 import Phone.Internal.FFI.PjString (PjString)
 
 #include <pjsua-lib/pjsua.h>
@@ -36,8 +36,11 @@ import Phone.Internal.FFI.PjString (PjString)
 data Msg
 data Hdr
 
-foreign import ccall "get_msg_hdr" getMsgHdr :: Ptr Msg -> PjIO (Ptr Hdr)
-foreign import ccall "get_msg_next_hdr" getNextHdr :: Ptr Hdr -> PjIO (Ptr Hdr)
+getMsgHdr :: Ptr Msg -> Ptr Hdr
+getMsgHdr = #{ptr pjsip_msg, hdr}
+
+getNextHdr :: Ptr Hdr -> PjIO (Ptr Hdr)
+getNextHdr = liftIO . #{peek pjsip_hdr, next}
 
 getHdrName :: Ptr Hdr -> PjIO PjString
 getHdrName = liftIO . #{peek pjsip_hdr, name}

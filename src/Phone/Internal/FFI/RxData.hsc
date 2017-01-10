@@ -15,13 +15,17 @@ module Phone.Internal.FFI.RxData
     )
   where
 
+import Control.Monad.IO.Class (liftIO)
+import Data.Function ((.))
 import Foreign.Ptr (Ptr)
+import Foreign.Storable (peekByteOff)
 
-import Phone.Internal.FFI.Common (PjIO(PjIO))
-import Phone.Internal.FFI.Msg(Msg)
+import Phone.Internal.FFI.Common (PjIO)
+import Phone.Internal.FFI.Msg (Msg)
 
 #include <pjsua-lib/pjsua.h>
 
 data RxData
 
-foreign import ccall "get_rx_msg" getMsg :: Ptr RxData -> PjIO (Ptr Msg)
+getMsg :: Ptr RxData -> PjIO (Ptr Msg)
+getMsg = liftIO . #{peek pjsip_rx_data, msg_info.msg}
