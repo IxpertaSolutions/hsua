@@ -14,7 +14,6 @@ module Phone.Internal.FFI.Transport
     ( TransportConfig
     , createTransport
     , setTransportPort
-    , setDefaultTransportConfig
     , tcpTransport
     , udpTransport
     , withTransportConfig
@@ -39,7 +38,10 @@ data TransportId
 newtype TransportType = TransportType CInt deriving Storable
 
 withTransportConfig :: (Ptr TransportConfig -> PjIO a) -> PjIO a
-withTransportConfig = liftAlloc $ allocaBytes #{size pjsua_transport_config}
+withTransportConfig f =
+    liftAlloc (allocaBytes #{size pjsua_transport_config}) $ \cfg -> do
+        defaultTransportConfig cfg
+        f cfg
 
 setTransportPort :: Ptr TransportConfig -> CUInt -> PjIO ()
 setTransportPort = (liftIO .) . #{poke pjsua_transport_config, port}
@@ -49,7 +51,7 @@ setTransportPort = (liftIO .) . #{poke pjsua_transport_config, port}
     tcpTransport = PJSIP_TRANSPORT_TCP
 }
 
-foreign import ccall "pjsua_transport_config_default" setDefaultTransportConfig
+foreign import ccall "pjsua_transport_config_default" defaultTransportConfig
     :: Ptr TransportConfig -> PjIO ()
 
 foreign import ccall "pjsua_transport_create" createTransport
