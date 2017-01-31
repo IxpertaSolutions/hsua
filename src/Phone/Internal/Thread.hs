@@ -16,7 +16,7 @@ module Phone.Internal.Thread
 import Control.Applicative (pure)
 import Control.Concurrent (forkOS)
 import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar, takeMVar)
-import Control.Exception (SomeException, throwIO, try)
+import Control.Exception (SomeException, mask, throwIO, try)
 import Control.Monad ((>>=), forever, join, void)
 import Data.Either (either)
 import Data.Function (($), (.))
@@ -37,5 +37,5 @@ worker = forever . join . takeMVar
 execInBoundWorker :: IO a -> IO a
 execInBoundWorker action = do
     result <- newEmptyMVar
-    putMVar queue $ try action >>= putMVar result
+    putMVar queue $ mask $ \restore -> try (restore action) >>= putMVar result
     takeMVar result >>= either (throwIO :: SomeException -> IO a) pure
