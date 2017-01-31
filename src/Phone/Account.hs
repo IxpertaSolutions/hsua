@@ -24,17 +24,14 @@ module Phone.Account
     )
   where
 
-import Control.Monad ((>>=))
 import Data.Bool (Bool)
 import Data.Function (($), (.))
 import Data.Monoid ((<>))
-import Foreign.Marshal.Alloc (alloca)
-import Foreign.Storable (peek)
 import Text.Show (Show)
 
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Cont (ContT(ContT), evalContT)
 import Data.Text (Text)
-import qualified Data.Text as T (unpack)
 
 import Phone.Exception
     ( PhoneException
@@ -63,13 +60,9 @@ import qualified Phone.Internal.FFI.Account as FFI
     , setAccountUsername
     , withAccountConfig
     )
-import qualified Phone.Internal.FFI.Common as FFI
-    ( pjFalse
-    , pjTrue
-    , liftAlloc
-    )
+import qualified Phone.Internal.FFI.Common as FFI (pjFalse, pjTrue)
 import qualified Phone.Internal.FFI.PjString as FFI (withPjString)
-import qualified Phone.Internal.Utils as FFI (check)
+import qualified Phone.Internal.Utils as FFI (check, checkPeek)
 
 
 data AuthScheme = Digest | Basic
@@ -105,14 +98,15 @@ mkSimpleAccount server user password = Account
     }
 
 createAccount :: MonadPJ m => WhenRegister -> Account -> m AccountId
-createAccount whenReg Account{..} = liftPJ .
-    FFI.withPjString (T.unpack accountId) $ \accountIdPjStr ->
-    FFI.withPjString (T.unpack registrationUri) $ \registrationUriPjStr ->
-    FFI.withPjString (T.unpack realm) $ \realmPjStr ->
-    FFI.withPjString (T.unpack $ schemeText authScheme) $ \schemePjStr ->
-    FFI.withPjString (T.unpack userName) $ \userNamePjStr ->
-    FFI.withPjString (T.unpack password) $ \passwordPjStr ->
-    FFI.withAccountConfig $ \accCfg -> do
+createAccount whenReg Account{..} = liftPJ . evalContT $ do
+    accountIdPjStr <- ContT $ FFI.withPjString accountId
+    registrationUriPjStr <- ContT $ FFI.withPjString registrationUri
+    realmPjStr <- ContT $ FFI.withPjString realm
+    schemePjStr <- ContT $ FFI.withPjString (schemeText authScheme)
+    userNamePjStr <- ContT $ FFI.withPjString userName
+    passwordPjStr <- ContT $ FFI.withPjString password
+    accCfg <- ContT FFI.withAccountConfig
+    lift $ do
         FFI.setAccountId accCfg accountIdPjStr
         FFI.setAccountRegUri accCfg registrationUriPjStr
         FFI.setAccountCredCount accCfg 1
@@ -122,27 +116,26 @@ createAccount whenReg Account{..} = liftPJ .
         FFI.setAccountDataType accCfg 0 FFI.credDataPlainPasswd
         FFI.setAccountData accCfg 0 passwordPjStr
         FFI.setAccountRegisterOnAdd accCfg $ toVal whenReg
-        FFI.liftAlloc alloca $ \accId -> do
-            FFI.setAccount accCfg FFI.pjTrue accId >>= FFI.check CreateAccount
-            liftIO $ peek accId
+        FFI.checkPeek CreateAccount $ FFI.setAccount accCfg FFI.pjTrue
   where
     toVal Now = FFI.pjTrue
     toVal Later = FFI.pjFalse
 
+    schemeText :: AuthScheme -> Text
     schemeText Digest = "digest"
     schemeText Basic = "basic"
 
 registerAccount :: MonadPJ m => AccountId -> m ()
-registerAccount accId = liftPJ $
-    FFI.setAccountRegistration accId FFI.pjTrue >>= FFI.check Registration
+registerAccount accId = liftPJ . FFI.check Registration
+    $ FFI.setAccountRegistration accId FFI.pjTrue
 
 unregisterAccount :: MonadPJ m => AccountId -> m ()
-unregisterAccount accId = liftPJ $
-    FFI.setAccountRegistration accId FFI.pjFalse >>= FFI.check Unregistration
+unregisterAccount accId = liftPJ . FFI.check Unregistration
+    $ FFI.setAccountRegistration accId FFI.pjFalse
 
 isAccountRegistered :: MonadPJ m => AccountId -> m Bool
 isAccountRegistered = liftPJ . FFI.isAccountRegistered
 
 removeAccount :: MonadPJ m => AccountId -> m ()
-removeAccount accId = liftPJ $
-    FFI.removeAccount accId >>= FFI.check RemoveAccount
+removeAccount accId = liftPJ . FFI.check RemoveAccount
+    $ FFI.removeAccount accId

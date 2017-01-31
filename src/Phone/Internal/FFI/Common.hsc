@@ -18,7 +18,6 @@ module Phone.Internal.FFI.Common
     , UserData
     , Transaction
     , liftAlloc
-    , maybePeek
     , pjFalse
     , pjSuccess
     , pjTrue
@@ -32,11 +31,8 @@ import Data.Eq (Eq)
 import Data.Ord (Ord)
 import Data.Function ((.))
 import Data.Functor (Functor)
-import Data.Maybe (Maybe)
 import Foreign.C.Types (CInt)
-import Foreign.Ptr (Ptr)
 import Foreign.Storable (Storable)
-import qualified Foreign.Marshal.Utils as F (maybePeek)
 import System.IO (IO)
 import Text.Show (Show)
 
@@ -64,9 +60,6 @@ runPjIO = execInBoundWorker . unsafeRunPjIO
 
 liftAlloc :: ((a -> IO b) -> IO b) -> ((a -> PjIO b) -> PjIO b)
 liftAlloc f = liftIO . f . (unsafeRunPjIO .)
-
-maybePeek :: (Ptr a -> PjIO b) -> Ptr a -> PjIO (Maybe b)
-maybePeek peek = liftIO . F.maybePeek (unsafeRunPjIO . peek)
 
 data CallSetting
 data Reason

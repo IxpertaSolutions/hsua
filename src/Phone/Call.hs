@@ -23,21 +23,17 @@ module Phone.Call
 
 import Prelude (fromIntegral)
 
-import Control.Applicative (Applicative((<*>)))
-import Control.Monad ((>>=), mapM_)
+import Control.Applicative (Applicative((<*>), pure))
+import Control.Monad (forM, mapM_)
 import Data.Function (($), (.))
 import Data.Functor ((<$>))
 import Data.Int (Int)
-import Data.List (reverse)
-import Data.Tuple (uncurry)
-import Foreign.Marshal.Alloc (alloca)
 import Foreign.Ptr (Ptr, nullPtr)
-import Foreign.Storable (peek)
 import Text.Show (Show)
 
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.Cont (ContT(ContT, runContT), evalContT)
+import Control.Monad.Trans.Class (lift)
 import Data.Text (Text)
-import qualified Data.Text as T (unpack)
 
 import Phone.Exception
     ( PhoneException
@@ -70,7 +66,7 @@ import qualified Phone.Internal.FFI.CallManipulation as FFI
     , hangupCall
     , makeCall
     )
-import qualified Phone.Internal.FFI.Common as FFI (CallId, PjIO, liftAlloc)
+import qualified Phone.Internal.FFI.Common as FFI (CallId, PjIO)
 import qualified Phone.Internal.FFI.MsgData as FFI
     ( MsgData
     , pushHeader
@@ -78,7 +74,7 @@ import qualified Phone.Internal.FFI.MsgData as FFI
     )
 import qualified Phone.Internal.FFI.PjString as FFI (withPjStringPtr)
 import qualified Phone.Internal.FFI.GenericStringHeader as FFI (withHeader)
-import qualified Phone.Internal.Utils as FFI (check)
+import qualified Phone.Internal.Utils as FFI (check, checkPeek)
 
 
 data CallInfo = CallInfo
@@ -89,7 +85,7 @@ data CallInfo = CallInfo
 
 getCallInfo :: MonadPJ m => FFI.CallId -> m CallInfo
 getCallInfo callId = liftPJ . FFI.withCallInfo $ \info -> do
-    FFI.getCallInfo callId info >>= FFI.check GetCallInfo
+    FFI.check GetCallInfo $ FFI.getCallInfo callId info
     CallInfo <$> FFI.getAccountId info <*> FFI.getCallState info
 
 answerCall
@@ -98,9 +94,8 @@ answerCall
     -> Int
     -- ^ Status code to be used to answer the call.
     -> m ()
-answerCall callId status = liftPJ $
-    FFI.answerCall callId (fromIntegral status) nullPtr nullPtr
-    >>= FFI.check AnswerCall
+answerCall callId status = liftPJ . FFI.check AnswerCall
+    $ FFI.answerCall callId (fromIntegral status) nullPtr nullPtr
 
 hangupCall
     :: MonadPJ m
@@ -108,17 +103,14 @@ hangupCall
     -> Int
     -- ^ Status code to be used to answer the call.
     -> m ()
-hangupCall callId status = liftPJ $
-    FFI.hangupCall callId (fromIntegral status) nullPtr nullPtr
-    >>= FFI.check HangupCall
+hangupCall callId status = liftPJ . FFI.check HangupCall
+    $ FFI.hangupCall callId (fromIntegral status) nullPtr nullPtr
 
 makeCall :: MonadPJ m => FFI.AccountId -> Text -> m FFI.CallId
-makeCall accId url = liftPJ $
-    FFI.withPjStringPtr (T.unpack url) $ \urlPjStr ->
-    FFI.liftAlloc alloca $ \callId -> do
-        FFI.makeCall accId urlPjStr nullPtr nullPtr nullPtr callId
-            >>= FFI.check MakeCall
-        liftIO $ peek callId
+makeCall accId url = liftPJ . evalContT $ do
+    urlPjStr <- ContT $ FFI.withPjStringPtr url
+    lift . FFI.checkPeek MakeCall
+        $ FFI.makeCall accId urlPjStr nullPtr nullPtr nullPtr
 
 makeCallWithHeaders
     :: MonadPJ m
@@ -126,29 +118,21 @@ makeCallWithHeaders
     -> Text
     -> [(Text, Text)]
     -> m FFI.CallId
-makeCallWithHeaders accId url hs = liftPJ $
-    FFI.withPjStringPtr (T.unpack url) $ \urlPjStr ->
-    withMsgData hs $ \msgData ->
-    FFI.liftAlloc alloca $ \callId -> do
-        FFI.makeCall accId urlPjStr nullPtr nullPtr msgData callId
-            >>= FFI.check MakeCall
-        liftIO $ peek callId
+makeCallWithHeaders accId url hs = liftPJ . evalContT $ do
+    urlPjStr <- ContT $ FFI.withPjStringPtr url
+    msgData <- ContT $ withMsgData hs
+    lift . FFI.checkPeek MakeCall
+        $ FFI.makeCall accId urlPjStr nullPtr nullPtr msgData
 
 withMsgData :: [(Text, Text)] -> (Ptr FFI.MsgData -> FFI.PjIO a) -> FFI.PjIO a
-withMsgData headers f = go headers []
-  where
-    go [] ps = withMsgData' (reverse ps) f
-    go (h:hs) ps = uncurry withHeader h $ \p -> go hs (p:ps)
-
-    withMsgData' ptrs g =
-        FFI.withMsgData $ \msgData -> do
-            mapM_ (FFI.pushHeader msgData) ptrs
-            g msgData
-
-    withHeader name value g =
-        FFI.withPjStringPtr (T.unpack name) $ \namePjStr ->
-        FFI.withPjStringPtr (T.unpack value) $ \valuePjStr ->
-        FFI.withHeader namePjStr valuePjStr g
+withMsgData headers = runContT $ do
+    ptrs <- forM headers $ \(name, value) -> do
+        namePjStr <- ContT $ FFI.withPjStringPtr name
+        valuePjStr <- ContT $ FFI.withPjStringPtr value
+        ContT $ FFI.withHeader namePjStr valuePjStr
+    msgData <- ContT FFI.withMsgData
+    mapM_ (lift . FFI.pushHeader msgData) ptrs
+    pure msgData
 
 hangupAll :: MonadPJ m => m ()
 hangupAll = liftPJ FFI.hangupAll

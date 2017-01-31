@@ -19,9 +19,9 @@ module Phone.Run
 
 import Prelude (fromIntegral)
 
-import Control.Applicative (pure)
+import Control.Applicative ((<$>), (<*>), pure)
 import Control.Exception (bracket_)
-import Control.Monad ((>=>), (>>=), void)
+import Control.Monad ((>=>), (>>=), (=<<), void)
 import Data.Function (($), (.))
 import Data.Maybe (Maybe(Just, Nothing), maybe)
 import Foreign.Marshal.Utils (fromBool)
@@ -29,6 +29,8 @@ import Foreign.Ptr (nullPtr)
 import System.IO (IO)
 
 import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.Cont (ContT(ContT), evalContT)
+import Control.Monad.Trans.Class (lift)
 
 import Phone.Config
     ( Config
@@ -113,62 +115,66 @@ withPhone :: Config -> IO () -> IO ()
 withPhone cfg = bracket_ (initPhone cfg) deinitPhone
 
 initPhone :: Config -> IO ()
-initPhone Config{..} = liftPJ $ do
-    FFI.createPjSua >>= FFI.check CreateLib
-    FFI.withPjConfig $ \pjCfg -> do
-        whenJust onCallStateChange
-            $ liftIO . FFI.toOnCallState . onCallState
-            >=> FFI.setOnCallStateCallback pjCfg
-        whenJust onCallTransactionStateChange
-            $ liftIO . FFI.toOnCallTransactionState . onCallTransactionState
-            >=> FFI.setOnCallTransactionStateCallback pjCfg
-        whenJust onIncomingCall
-            $ liftIO . FFI.toOnIncomingCall . onIncCall
-            >=> FFI.setOnIncomingCallCallback pjCfg
-        whenJust onRegistrationStateChange
-            $ liftIO . FFI.toOnRegistrationState
-            >=> FFI.setOnRegistrationStateCallback pjCfg
-        whenJust onRegistrationStarted
-            $ liftIO . FFI.toOnRegistrationStarted . onRegStarted
-            >=> FFI.setOnRegistrationStartedCallback pjCfg
-        whenJust onMediaStateChange
-            $ liftIO . FFI.toOnMediaState
-            >=> FFI.setOnMediaStateCallback pjCfg
-        withLog $ \logCfg ->
-            withMedia
-                $ FFI.initializePjSua pjCfg logCfg
-                >=> FFI.check Initialization
-    FFI.withTransportConfig $ \transportCfg ->
-        FFI.createTransport FFI.udpTransport transportCfg nullPtr
-        >>= FFI.check Transport
-    FFI.pjsuaStart >>= FFI.check Start
-    setCodecs
+initPhone Config{..} = liftPJ . evalContT $ do
+    lift . FFI.check CreateLib
+        $ FFI.createPjSua
+    lift . FFI.check Initialization
+        =<< FFI.initializePjSua <$> withPj <*> withLog <*> withMedia
+    lift . FFI.check Transport
+        =<< FFI.createTransport FFI.udpTransport <$> withTransport <*> pure nullPtr
+    lift . FFI.check Start
+        $ FFI.pjsuaStart
+    lift $ setCodecs
   where
     Handlers{..} = handlers
     Logging{..} = logging
 
-    withLog f =
-        withMaybePjString logFilename $ \logFile ->
-        FFI.withLoggingConfig $ \logCfg -> do
+    withTransport = ContT FFI.withTransportConfig
+
+    withPj = do
+        pjCfg <- ContT FFI.withPjConfig
+        lift $ do
+            whenJust onCallStateChange
+                $ liftIO . FFI.toOnCallState . onCallState
+                >=> FFI.setOnCallStateCallback pjCfg
+            whenJust onCallTransactionStateChange
+                $ liftIO . FFI.toOnCallTransactionState . onCallTransactionState
+                >=> FFI.setOnCallTransactionStateCallback pjCfg
+            whenJust onIncomingCall
+                $ liftIO . FFI.toOnIncomingCall . onIncCall
+                >=> FFI.setOnIncomingCallCallback pjCfg
+            whenJust onRegistrationStateChange
+                $ liftIO . FFI.toOnRegistrationState
+                >=> FFI.setOnRegistrationStateCallback pjCfg
+            whenJust onRegistrationStarted
+                $ liftIO . FFI.toOnRegistrationStarted . onRegStarted
+                >=> FFI.setOnRegistrationStartedCallback pjCfg
+            whenJust onMediaStateChange
+                $ liftIO . FFI.toOnMediaState
+                >=> FFI.setOnMediaStateCallback pjCfg
+        pure pjCfg
+
+    withLog = do
+        logFile <- ContT $ withMaybePjString logFilename
+        logCfg <- ContT $ FFI.withLoggingConfig
+        lift $ do
             whenJust logMsgLogging $ FFI.setMsgLogging logCfg . fromBool
             whenJust logLevel $ FFI.setLevel logCfg . fromIntegral
             whenJust logConsoleLevel $ FFI.setConsoleLevel logCfg . fromIntegral
             whenJust logFile $ FFI.setLogFilename logCfg
-            f logCfg
+        pure logCfg
 
-    withMedia f =
-        FFI.withMediaConfig $ \mediaCfg -> do
-            -- When pjproject is built without resampling (as it happens to be
-            -- in Debian), we want to fix the rate and codecs so that we don't
-            -- crash in resampler creation.
-            FFI.setMediaConfigClockRate mediaCfg 8000
-            f mediaCfg
+    withMedia = do
+        mediaCfg <- ContT FFI.withMediaConfig
+        -- When pjproject is built without resampling (as it happens to be
+        -- in Debian), we want to fix the rate and codecs so that we don't
+        -- crash in resampler creation.
+        lift $ FFI.setMediaConfigClockRate mediaCfg 8000
+        pure mediaCfg
 
     setCodecs = do
-        FFI.withPjStringPtr "PCMU" $ \codecStr ->
-            FFI.codecSetPriority codecStr 255
-        FFI.withPjStringPtr "PCMA" $ \codecStr ->
-            FFI.codecSetPriority codecStr 255
+        FFI.withPjStringPtr "PCMU" (`FFI.codecSetPriority` 255)
+        FFI.withPjStringPtr "PCMA" (`FFI.codecSetPriority` 255)
 
     onCallState f callId event =
         toEvent event >>= f callId

@@ -10,6 +10,7 @@
 -- Portability:  GHC specific language extensions.
 module Phone.Internal.Utils
     ( check
+    , checkPeek
     )
   where
 
@@ -18,9 +19,21 @@ import Control.Monad (unless)
 import Control.Monad.IO.Class (liftIO)
 import Data.Eq ((==))
 import Data.Function (($))
+import Foreign.Marshal.Alloc (alloca)
+import Foreign.Ptr (Ptr)
+import Foreign.Storable (Storable, peek)
 
-import Phone.Internal.FFI.Common (PjIO, PjStatus, pjSuccess)
+import Phone.Internal.FFI.Common (PjIO, PjStatus, liftAlloc, pjSuccess)
 
 
-check :: Exception e => e -> PjStatus -> PjIO ()
-check e ret = unless (ret == pjSuccess) $ liftIO (throwIO e)
+check :: Exception e => e -> PjIO PjStatus -> PjIO ()
+check e action = do
+    ret <- action
+    unless (ret == pjSuccess) $ liftIO (throwIO e)
+
+checkPeek
+    :: (Exception e, Storable a) => e -> (Ptr a -> PjIO PjStatus) -> PjIO a
+checkPeek e action =
+    liftAlloc alloca $ \ptr -> do
+        check e (action ptr)
+        liftIO (peek ptr)
